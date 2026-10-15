@@ -870,23 +870,23 @@
 
     var endpoints = [
       {
-        url: 'https://api64.ipify.org?format=json',
-        parse: function (d) { return d.ip; }
-      },
-      {
-        url: 'https://api.ipify.org?format=json',
-        parse: function (d) { return d.ip; }
-      },
-      {
-        url: 'https://cloudflare.com/cdn-cgi/trace',
+        url: '/cdn-cgi/trace',
         parse: function (txt) {
-          var m = txt.match(/ip=([^\n\r]+)/);
+          var m = typeof txt === 'string' ? txt.match(/ip=([^\n\r]+)/) : null;
           return m ? m[1] : null;
         }
       },
       {
+        url: 'https://api64.ipify.org?format=json',
+        parse: function (d) { return d && d.ip ? d.ip : null; }
+      },
+      {
+        url: 'https://api.ipify.org?format=json',
+        parse: function (d) { return d && d.ip ? d.ip : null; }
+      },
+      {
         url: 'https://ipwho.is/',
-        parse: function (d) { return d.ip; }
+        parse: function (d) { return d && d.ip ? d.ip : null; }
       }
     ];
 
