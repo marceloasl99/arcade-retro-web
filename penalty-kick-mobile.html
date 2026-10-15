@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#020617">
+<title>PENALTY KICK — Arcade Mobile</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#020617; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0;
+  }
+
+  #app-mobile {
+    width:100%; max-width:480px; height:100dvh; height:100%;
+    margin:0 auto; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: radial-gradient(circle at 50% 30%, #0a1b12 0%, #020617 100%);
+    overflow:hidden; position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.95);
+  }
+
+  /* ------------------- CABEÇALHO SUPERIOR ------------------- */
+  #header-mobile {
+    flex:0 0 auto; height:46px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 8px; width:100%;
+    background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(34,197,94,0.25);
+    z-index:20;
+  }
+  #voltar-link {
+    color:#22c55e; text-decoration:none; font-size:10px; font-weight:800;
+    letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
+    flex-shrink:0;
+  }
+  .info-bar { display:flex; gap:8px; font-size:10px; align-items:center; }
+  .info-item { display:flex; flex-direction:column; align-items:center; }
+  .info-rotulo { font-size:7px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase; }
+  .info-val { font-weight:900; color:#22c55e; font-size:11px; }
+
+  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .btn-topo {
+    background:#1e293b; border:1px solid #475569; border-radius:6px;
+    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:32px; height:30px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-topo:active { background:#22c55e; color:#020617; }
+
+  /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
+  #palco {
+    flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; padding:4px;
+  }
+  #arena-frame-mobile {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 24px rgba(0,0,0,0.85), 0 0 0 1px rgba(34,197,94,0.3);
+    border-radius:8px; overflow:hidden; background:#000;
+  }
+  #tela {
+    display:block; width:100%; height:100%;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+
+  /* ------------------- BARRA INFERIOR DE ORIENTAÇÃO TOUCH ------------------- */
+  #controles-deck {
+    flex:0 0 auto; padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:rgba(15,23,42,0.96); border-top:1px solid rgba(34,197,94,0.25);
+    z-index:20;
+  }
+
+  .guia-touch {
+    font-size:11px; color:#94a3b8; font-weight:700; text-align:center; flex:1;
+  }
+  .btn-chute-action {
+    background:linear-gradient(180deg, #22c55e, #15803d);
+    border:2px solid #4ade80; color:#fff; border-radius:8px;
+    padding:8px 14px; font-family:inherit; font-size:11px; font-weight:900;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+  <!-- CABEÇALHO SUPERIOR -->
+  <header id="header-mobile">
+    <a href="index.html" id="voltar-link">
+      <span>&larr;</span>
+      <span data-en="MENU" data-pt="MENU">MENU</span>
+    </a>
+
+    <div class="info-bar">
+      <div class="info-item">
+        <span class="info-rotulo" data-en="MATCH" data-pt="PLACAR">MATCH</span>
+        <span class="info-val" id="hud-match-score">0 - 0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="ROUND" data-pt="RODADA">ROUND</span>
+        <span class="info-val" id="hud-round" style="color:#facc15;">1/5</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="ROLE" data-pt="FUNÇÃO">ROLE</span>
+        <span class="info-val" id="hud-role" style="color:#38bdf8;">STRIKER</span>
+      </div>
+    </div>
+
+    <div class="acoes-topo">
+      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
+      <button type="button" class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" title="Language">🇺🇸</button>
+      <button type="button" class="btn-topo" id="btn-pausa" title="Pausa">⏸</button>
+    </div>
+  </header>
+
+  <!-- PALCO DO JOGO -->
+  <main id="palco">
+    <div id="arena-frame-mobile">
+      <canvas id="tela" width="1280" height="640"></canvas>
+    </div>
+  </main>
+
+  <!-- DECK INFERIOR -->
+  <footer id="controles-deck">
+    <div class="guia-touch" id="guia-touch" data-en="SWIPE BALL TO SHOOT · SLIDE TO DEFEND" data-pt="DESLIZE NA BOLA P/ CHUTAR · ARRASTE P/ DEFENDER">
+      SWIPE BALL TO SHOOT · SLIDE TO DEFEND
+    </div>
+    <button type="button" class="btn-chute-action" id="btn-action">⚽ KICK</button>
+  </footer>
+</div>
+
+<script src="roteador.js"></script>
+<script src="penalty-kick.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById("tela");
+  const palco = document.getElementById("palco");
+  const arenaFrame = document.getElementById("arena-frame-mobile");
+
+  const hudMatchScore = document.getElementById("hud-match-score");
+  const hudRound = document.getElementById("hud-round");
+  const hudRole = document.getElementById("hud-role");
+
+  const btnPausa = document.getElementById("btn-pausa");
+  const btnSom = document.getElementById("btn-som");
+  const btnAction = document.getElementById("btn-action");
+
+  function redimensionarArenaMobile() {
+    if (!palco || !arenaFrame) return;
+    const wMax = palco.clientWidth - 8;
+    const hMax = palco.clientHeight - 8;
+    const proporcao = 1280 / 640;
+
+    let w = wMax;
+    let h = w / proporcao;
+
+    if (h > hMax) {
+      h = hMax;
+      w = h * proporcao;
+    }
+
+    arenaFrame.style.width = Math.floor(w) + "px";
+    arenaFrame.style.height = Math.floor(h) + "px";
+  }
+
+  window.addEventListener("resize", redimensionarArenaMobile);
+  window.addEventListener("orientationchange", redimensionarArenaMobile);
+  setTimeout(redimensionarArenaMobile, 40);
+  setTimeout(redimensionarArenaMobile, 200);
+
+  const game = new PenaltyKick.PenaltyKickGame(canvas, {
+    onHudUpdate: function (info) {
+      const isPt = (typeof window !== "undefined" && window.obterIdioma && window.obterIdioma() === "pt");
+      if (hudMatchScore) hudMatchScore.textContent = `${info.scorePlayer} - ${info.scoreCpu}`;
+      if (hudRound) hudRound.textContent = `${info.round}/5`;
+      if (hudRole) {
+        hudRole.textContent = info.role === "striker" ? (isPt ? "ATACANTE" : "STRIKER") : (isPt ? "GOLEIRO" : "GOALKEEPER");
+        hudRole.style.color = info.role === "striker" ? "#38bdf8" : "#facc15";
+      }
+
+      if (btnPausa) btnPausa.textContent = info.state === "paused" ? "▶" : "⏸";
+      if (btnSom) btnSom.textContent = info.sound ? "🔊" : "🔇";
+    }
+  });
+
+  btnAction.addEventListener("click", () => {
+    if (game.state === "start" || game.state === "match_over") {
+      game.startNewMatch();
+    } else if (game.state === "striker_aim" && !game.ball.inFlight) {
+      // Quick kick assist
+      game.kickPlayerShot((Math.random() - 0.5) * 60, -120, 0.25);
+    }
+  });
+
+  btnPausa.addEventListener("click", () => game.togglePause());
+  btnSom.addEventListener("click", () => game.toggleSound());
+
+  game.startLoop();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#03050c">
+<title>SPACE CADET 3D — Celular Fullscreen</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100vw; height:100dvh; height:100%;
+    margin:0; padding:0; overflow:hidden; position:fixed; inset:0;
+    background:#03050c; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e0edff; touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+  }
+
+  #app-mobile {
+    width:100%; height:100%; display:flex; flex-direction:column;
+    position:relative; overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #0c1630 0%, #03050c 100%);
+  }
+
+  /* -------------------------- HUD SUPERIOR COMPACTO -------------------------- */
+  #hud-topo {
+    flex-shrink:0; width:100%; z-index:20;
+    padding:calc(env(safe-area-inset-top) + 6px) 12px 6px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg, rgba(6,10,22,0.95) 0%, rgba(6,10,22,0.6) 80%, transparent 100%);
+  }
+  .hud-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:8px; background:rgba(18,28,52,0.75);
+    border:1px solid rgba(56,189,248,0.3); font-size:11px; font-weight:800;
+    color:#38bdf8; text-decoration:none; backdrop-filter:blur(4px);
+    cursor:pointer;
+  }
+  .hud-btn:active { transform:scale(0.95); }
+
+  .hud-titulo {
+    font-size:12px; font-weight:900; letter-spacing:0.2em; color:#fff;
+    text-shadow:0 0 12px rgba(56,189,248,0.8); display:flex; align-items:center; gap:6px;
+  }
+  .hud-acoes {
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* -------------------------- ÁREA DA MESA / CANVAS -------------------------- */
+  #mesa-viewport {
+    flex:1; width:100%; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    padding:4px 8px;
+  }
+  #canvas {
+    display:block; max-width:100%; max-height:100%;
+    object-fit:contain; border-radius:10px;
+    border:1px solid rgba(56,189,248,0.25);
+    filter:contrast(1.08) saturate(1.15) brightness(1.04);
+    box-shadow:0 0 25px rgba(0,180,255,0.2);
+  }
+
+  /* Camada sutil de Scanlines */
+  .crt-mobile {
+    position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size:100% 3px; opacity:0.5;
+  }
+
+  /* ------------------- OS 4 BOTÕES TÁTEIS PRINCIPAIS ------------------- */
+  #controles-mobile {
+    flex-shrink:0; width:100%; z-index:30; pointer-events:none;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:8px calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px);
+    background:linear-gradient(0deg, rgba(3,5,12,0.95) 0%, rgba(3,5,12,0.7) 60%, transparent 100%);
+  }
+  .col-botoes {
+    display:flex; flex-direction:column; gap:10px; pointer-events:auto;
+  }
+
+  /* Estilo dos Botões Virtuais */
+  .btn-virtual {
+    width:clamp(74px, 20vw, 96px); height:clamp(74px, 20vw, 96px);
+    border-radius:20px; border:2px solid rgba(56,189,248,0.4);
+    background:radial-gradient(circle at 35% 35%, rgba(14,35,70,0.9), rgba(6,14,32,0.96));
+    backdrop-filter:blur(8px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#f8fafc; font-weight:900; box-shadow:0 6px 18px rgba(0,0,0,0.7), inset 0 2px 6px rgba(255,255,255,0.2);
+    cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:transform 0.05s, border-color 0.05s, background 0.05s, box-shadow 0.05s;
+  }
+  .btn-virtual:active, .btn-virtual.ativo {
+    transform:scale(0.92); border-color:#38bdf8;
+    background:radial-gradient(circle at 35% 35%, rgba(2,132,199,0.95), rgba(12,74,110,0.98));
+    box-shadow:0 0 22px rgba(56,189,248,0.7), inset 0 2px 8px rgba(255,255,255,0.4);
+  }
+  .btn-virtual .icone {
+    font-size:clamp(22px, 6vw, 30px); line-height:1; font-style:normal;
+  }
+  .btn-virtual .legenda {
+    font-size:clamp(8px, 2vw, 9px); letter-spacing:0.12em; margin-top:3px; color:#bae6fd;
+  }
+
+  /* Botão Lançar com cor em destaque */
+  #btnLancar {
+    border-color:rgba(236,72,153,0.5);
+    background:radial-gradient(circle at 35% 35%, rgba(131,24,67,0.9), rgba(76,5,33,0.96));
+  }
+  #btnLancar:active, #btnLancar.ativo {
+    border-color:#ec4899;
+    background:radial-gradient(circle at 35% 35%, rgba(219,39,119,0.95), rgba(157,23,77,0.98));
+    box-shadow:0 0 24px rgba(236,72,153,0.75);
+  }
+
+  /* Botão Tremer */
+  #btnTremer {
+    border-color:rgba(245,158,11,0.5);
+    background:radial-gradient(circle at 35% 35%, rgba(146,64,14,0.9), rgba(69,26,3,0.96));
+  }
+  #btnTremer:active, #btnTremer.ativo {
+    border-color:#fbbf24;
+    background:radial-gradient(circle at 35% 35%, rgba(217,119,6,0.95), rgba(120,53,15,0.98));
+    box-shadow:0 0 24px rgba(251,191,36,0.7);
+  }
+
+  /* -------------------------- OVERLAY DE INÍCIO -------------------------- */
+  .overlay {
+    position:fixed; inset:0; z-index:50;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:20px;
+    background:rgba(3,5,12,0.65);
+    backdrop-filter:blur(4px); text-align:center;
+  }
+  .overlay-card {
+    background:linear-gradient(180deg, rgba(14,24,52,0.95) 0%, rgba(6,12,28,0.98) 100%);
+    border:2px solid rgba(56,189,248,0.45); border-radius:18px;
+    padding:24px 20px; width:min(90vw, 360px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.8), 0 0 25px rgba(56,189,248,0.3);
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .overlay.oculto { display:none; }
+  .overlay h1 {
+    font-size:clamp(20px, 4.5vh, 28px); font-weight:900; letter-spacing:0.18em;
+    color:#fff; text-shadow:0 0 24px rgba(56,189,248,0.9);
+  }
+  .overlay h1 small {
+    display:block; font-size:10px; letter-spacing:0.25em; color:#818cf8; margin-top:4px;
+  }
+
+  .btn-jogar {
+    padding:14px 34px; border:2px solid #38bdf8; border-radius:12px;
+    background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+    color:#030712; font-size:15px; font-weight:900;
+    letter-spacing:0.2em; cursor:pointer; box-shadow:0 0 24px rgba(56,189,248,0.6);
+  }
+  .btn-jogar:active { transform:scale(0.96); }
+
+  #spinner-carregando {
+    display:none; flex-direction:column; align-items:center; gap:10px;
+  }
+  .spinner-roda {
+    width:36px; height:36px; border:4px solid rgba(56,189,248,0.2);
+    border-top-color:#38bdf8; border-radius:50%; animation:girar 0.8s linear infinite;
+  }
+  @keyframes girar { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+
+  <!-- HUD SUPERIOR -->
+  <header id="hud-topo">
+    <a href="index.html" class="hud-btn" data-en="&larr; BACK" data-pt="&larr; VOLTAR">&larr; BACK</a>
+    <div class="hud-titulo">
+      <span>&#128640;</span> SPACE CADET
+    </div>
+    <div class="hud-acoes">
+      <button class="hud-btn btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:3px 6px;">🇺🇸 EN</button>
+      <button class="hud-btn" id="btnSom">&#128266;</button>
+      <button class="hud-btn" id="btnRestart">&#128260;</button>
+    </div>
+  </header>
+
+  <!-- VIEWPORT DA MESA -->
+  <main id="mesa-viewport">
+    <canvas id="canvas" width="600" height="440"></canvas>
+    <div class="crt-mobile"></div>
+  </main>
+
+  <!-- DECK DE CONTROLES TÁTEIS -->
+  <nav id="controles-mobile">
+    <!-- Coluna Esquerda: Palheta Esquerda e Tremer -->
+    <div class="col-botoes">
+      <div class="btn-virtual" id="btnEsq">
+        <span class="icone">&#9664;</span>
+        <span class="legenda" data-en="FLIPPER" data-pt="PALHETA">FLIPPER</span>
+      </div>
+      <div class="btn-virtual" id="btnTremer">
+        <span class="icone">&#128243;</span>
+        <span class="legenda" data-en="NUDGE" data-pt="TREMER">NUDGE</span>
+      </div>
+    </div>
+
+    <!-- Coluna Direita: Palheta Direita e Lançar -->
+    <div class="col-botoes">
+      <div class="btn-virtual" id="btnDir">
+        <span class="icone">&#9654;</span>
+        <span class="legenda" data-en="FLIPPER" data-pt="PALHETA">FLIPPER</span>
+      </div>
+      <div class="btn-virtual" id="btnLancar">
+        <span class="icone">&#9889;</span>
+        <span class="legenda" data-en="LAUNCH" data-pt="LANÇAR">LAUNCH</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- OVERLAY DE INÍCIO -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <h1>
+        SPACE CADET 3D
+        <small>PINBALL WINDOWS 1995</small>
+      </h1>
+      <p style="font-size:12px; color:#cbd5e1; max-width:320px; line-height:1.6;" data-en="Rise through the Starfleet ranks with space missions, hyperspace chutes, and wormholes!" data-pt="Suba na patente da Frota Estelar com missões espaciais, túnel hyperspace e buraco de minhoca!">
+        Rise through the Starfleet ranks with space missions, hyperspace chutes, and wormholes!
+      </p>
+
+      <button class="btn-jogar" id="btnComecar" data-en="PLAY &#128640;" data-pt="JOGAR &#128640;">PLAY &#128640;</button>
+
+      <div id="spinner-carregando">
+        <div class="spinner-roda"></div>
+        <span style="font-size:11px; color:#38bdf8; letter-spacing:0.15em;" data-en="LOADING SPACE ENGINE..." data-pt="CARREGANDO MOTOR ESPACIAL...">LOADING SPACE ENGINE...</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ROTEADOR COMPARTILHADO -->
+<script src="roteador.js"></script>
+
+<script>
+"use strict";
+
+window.GAME_SOUND_ENABLED = true;
+var GAME_SOUND_ENABLED = true;
+
+var Module = {
+  preRun: [],
+  postRun: [function() {
+    console.log("Space Cadet Mobile pronto!");
+    const overlay = document.getElementById("overlay");
+    if (overlay) overlay.classList.add("oculto");
+    ajustarMesaMobile();
+  }],
+  print: function(t) { console.log(t); },
+  printErr: function(t) { console.warn(t); },
+  canvas: (function() {
+    var c = document.getElementById("canvas");
+    c.addEventListener("webglcontextlost", function(e) { e.preventDefault(); }, false);
+    return c;
+  })(),
+  setStatus: function(t) {},
+  totalDependencies: 0,
+  monitorRunDependencies: function(l) {}
+};
+
+// Disparo de teclas sintetizadas
+function dispararTecla(tipo, key, code, keyCode) {
+  const canvas = document.getElementById("canvas");
+  const ev = new KeyboardEvent(tipo, {
+    key: key,
+    code: code,
+    which: keyCode,
+    keyCode: keyCode,
+    bubbles: true,
+    cancelable: true
+  });
+  canvas.dispatchEvent(ev);
+  document.dispatchEvent(ev);
+}
+
+// Configurar botão de toque multi-touch com Pointer Events
+function conectarBotao(elId, key, code, keyCode) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+
+  function pressionar(e) {
+    e.preventDefault();
+    el.classList.add("ativo");
+    dispararTecla("keydown", key, code, keyCode);
+  }
+
+  function soltar(e) {
+    e.preventDefault();
+    el.classList.remove("ativo");
+    dispararTecla("keyup", key, code, keyCode);
+  }
+
+  el.addEventListener("pointerdown", pressionar, { passive:false });
+  el.addEventListener("pointerup", soltar, { passive:false });
+  el.addEventListener("pointercancel", soltar, { passive:false });
+  el.addEventListener("pointerleave", soltar, { passive:false });
+}
+
+// Palheta Esquerda (Z), Palheta Direita (/), Lançar (Space), Tremer (X)
+conectarBotao("btnEsq", "z", "KeyZ", 90);
+conectarBotao("btnDir", "/", "Slash", 191);
+conectarBotao("btnLancar", " ", "Space", 32);
+conectarBotao("btnTremer", "x", "KeyX", 88);
+
+// Alternar Som
+function alternarSom() {
+  GAME_SOUND_ENABLED = !GAME_SOUND_ENABLED;
+  try {
+    if (Module.SDL2 && Module.SDL2.audioContext) {
+      if (!GAME_SOUND_ENABLED) {
+        Module.SDL2.audioContext.suspend();
+      } else {
+        Module.SDL2.audioContext.resume();
+      }
+    }
+  } catch (err) {}
+}
+
+document.getElementById("btnSom").addEventListener("click", alternarSom);
+document.getElementById("btnRestart").addEventListener("click", () => {
+  dispararTecla("keydown", "F2", "F2", 113);
+  setTimeout(() => dispararTecla("keyup", "F2", "F2", 113), 50);
+});
+
+// Inicialização sob demanda
+let iniciado = false;
+document.getElementById("btnComecar").addEventListener("click", function() {
+  if (iniciado) return;
+  iniciado = true;
+  document.getElementById("btnComecar").style.display = "none";
+  document.getElementById("spinner-carregando").style.display = "flex";
+
+  const s = document.createElement("script");
+  s.src = "3DPinballSpaceCadet.js";
+  document.body.appendChild(s);
+});
+
+// Ajuste responsivo para telas verticais de celular
+function ajustarMesaMobile() {
+  const container = document.getElementById("mesa-viewport");
+  const canvas = document.getElementById("canvas");
+  if (!container || !canvas) return;
+
+  const rect = container.getBoundingClientRect();
+  const proporcao = 600 / 440;
+  let w = rect.width;
+  let h = rect.height;
+
+  if (w / h > proporcao) {
+    w = h * proporcao;
+  } else {
+    h = w / proporcao;
+  }
+  canvas.style.width = Math.round(w) + "px";
+  canvas.style.height = Math.round(h) + "px";
+}
+
+window.addEventListener("resize", ajustarMesaMobile);
+window.addEventListener("load", ajustarMesaMobile);
+</script>
+
+</body>
+</html>

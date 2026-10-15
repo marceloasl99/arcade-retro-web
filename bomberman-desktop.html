@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020617">
+<title>SUPER BOMBERMAN — Computador</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#020617; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ------------------- ESTRUTURA GERAL ARCADE ------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+  }
+
+  /* Painéis laterais retro */
+  .painel-lateral {
+    width:320px; flex-shrink:0; height:100%; display:flex; flex-direction:column;
+    gap:14px; padding:18px 16px; background:rgba(15,23,42,0.85);
+    border-right:1px solid rgba(56,189,248,0.2);
+    backdrop-filter:blur(8px); z-index:10; overflow-y:auto;
+    transition:margin 0.25s ease, opacity 0.25s ease;
+  }
+  #painel-dir {
+    border-right:none; border-left:1px solid rgba(56,189,248,0.2);
+  }
+
+  /* Estado maximizado (painéis recolhidos) */
+  #arcade-layout.max-view #painel-esq { margin-left:-320px; opacity:0; pointer-events:none; }
+  #arcade-layout.max-view #painel-dir { margin-right:-320px; opacity:0; pointer-events:none; }
+
+  #voltar-link {
+    color:#38bdf8; text-decoration:none; font-size:11px; font-weight:800;
+    letter-spacing:0.12em; display:inline-flex; align-items:center; gap:6px;
+    transition:transform 0.15s, color 0.15s;
+  }
+  #voltar-link:hover { color:#7dd3fc; transform:translateX(-3px); }
+
+  @media (max-width: 1080px) {
+    .painel-lateral { display:none !important; }
+  }
+
+  /* Container central da arena */
+  #arena-container {
+    flex:1; height:100%; position:relative; display:flex;
+    flex-direction:column; align-items:stretch; justify-content:stretch;
+    overflow:hidden; box-shadow:inset 0 0 70px rgba(0,0,0,0.9);
+  }
+
+  /* Barra de Topo do Gabinete */
+  .gabinete-topo {
+    width:100%; height:44px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px; background:rgba(2,6,23,0.7); border-bottom:1px solid rgba(255,255,255,0.06);
+    flex-shrink:0; z-index:5;
+  }
+  .gabinete-titulo {
+    font-size:13px; font-weight:900; letter-spacing:0.18em; color:#facc15;
+    display:flex; align-items:center; gap:8px;
+  }
+  .btn-topo-toggle {
+    background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35);
+    color:#38bdf8; border-radius:6px; padding:5px 10px; font-size:10px;
+    font-weight:800; letter-spacing:0.1em; cursor:pointer; font-family:inherit;
+    transition:all 0.15s;
+  }
+  .btn-topo-toggle:hover { background:rgba(56,189,248,0.25); color:#ffffff; }
+
+  /* Viewport da tela do jogo preenchendo toda a área central */
+  .viewport-gabinete {
+    flex:1; width:100%; height:calc(100% - 44px); position:relative; display:flex;
+    align-items:center; justify-content:center; overflow:hidden; padding:8px;
+  }
+
+  #arena-frame {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 45px rgba(0,0,0,0.95), 0 0 0 2px rgba(56,189,248,0.35);
+    border-radius:12px; overflow:hidden; background:#000;
+  }
+
+  #tela {
+    display:block; width:100%; height:100%;
+    cursor:pointer; image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+
+  /* Linhas CRT e Vidro */
+  .crt-overlay {
+    position:absolute; inset:0; pointer-events:none; z-index:3;
+    background:linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%),
+               linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02));
+    background-size:100% 3px, 6px 100%; opacity:0.6;
+  }
+  .reflexo-vidro {
+    position:absolute; inset:0; pointer-events:none; z-index:4;
+    background:linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 30%, transparent 60%);
+  }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.85) 100%);
+    border:1px solid rgba(56,189,248,0.22); border-radius:12px;
+    padding:12px 14px; box-shadow:0 4px 18px rgba(0,0,0,0.5);
+  }
+
+  .card-titulo {
+    font-size:10px; font-weight:800; letter-spacing:0.16em; color:#94a3b8;
+    text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+
+  /* Tabela de itens visual */
+  .tabela-itens {
+    display:flex; flex-direction:column; gap:8px; font-size:11px;
+  }
+  .linha-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:5px 8px; border-radius:6px; background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.04);
+  }
+  .alvo-rotulo { display:flex; align-items:center; gap:8px; font-weight:700; }
+  .ponto-val { font-weight:800; color:#facc15; }
+
+  /* Telemetria */
+  .telemetria-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;
+  }
+  .tele-item {
+    background:rgba(255,255,255,0.03); padding:6px 8px; border-radius:6px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .tele-rotulo { font-size:9px; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; }
+  .tele-val { font-size:14px; font-weight:800; color:#38bdf8; margin-top:2px; }
+
+  /* Hall da Fama */
+  .ranking-linha {
+    display:flex; justify-content:space-between; padding:5px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06); font-size:11px;
+  }
+  .ranking-linha:last-child { border-bottom:none; }
+  .ranking-nome { color:#e2e8f0; font-weight:700; }
+  .ranking-pts { color:#facc15; font-weight:800; }
+
+  /* Botões de Ação */
+  .botoes-coluna { display:flex; flex-direction:column; gap:8px; }
+  .btn-acao {
+    padding:10px 14px; border-radius:8px; font-family:inherit; font-size:11px;
+    font-weight:800; letter-spacing:0.1em; cursor:pointer; text-transform:uppercase;
+    border:1px solid rgba(255,255,255,0.12); background:rgba(30,41,59,0.8);
+    color:#e2e8f0; transition:all 0.15s;
+  }
+  .btn-acao:hover { background:rgba(51,65,85,0.9); border-color:#38bdf8; color:#fff; }
+  .btn-principal {
+    background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border-color:#38bdf8; color:#ffffff;
+    box-shadow:0 0 16px rgba(56,189,248,0.3);
+  }
+  .btn-principal:hover {
+    background:linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+    box-shadow:0 0 22px rgba(56,189,248,0.5); transform:scale(1.02);
+  }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+  <!-- PAINEL LATERAL ESQUERDO: MANUAL E INVENTÁRIO -->
+  <aside id="painel-esq" class="painel-lateral">
+    <div>
+      <a id="voltar-link" href="index.html" data-en="&larr; RETRO ARCADE" data-pt="&larr; ARCADE RETR&Ocirc;">&larr; RETRO ARCADE</a>
+    </div>
+
+    <!-- Apresentação SNES -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>SUPER BOMBERMAN</span>
+        <span style="color:#facc15;">SNES 1993</span>
+      </div>
+      <p style="font-size:11px; line-height:1.6; color:#94a3b8;" data-en="High-precision recreation of the Super Nintendo classic. Blast 16-bit destructible blocks, collect power-ups, defeat monsters, and find the exit portal!" data-pt="Recriação em alta precisão do clássico do Super Nintendo. Exploda blocos com tijolos 16-bit, colete power-ups, derrote monstros e abra o portal de saída!">
+        High-precision recreation of the Super Nintendo classic. Blast 16-bit destructible blocks, collect power-ups, defeat monsters, and find the exit portal!
+      </p>
+    </div>
+
+    <!-- Catálogo de Power-ups -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="HIDDEN POWER-UPS" data-pt="POWER-UPS ESCONDIDOS">HIDDEN POWER-UPS</span>
+      </div>
+      <div class="tabela-itens">
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span>💣</span>
+            <span>BOMB UP</span>
+          </div>
+          <span class="ponto-val" data-en="+1 Bomb" data-pt="+1 Bomba">+1 Bomb</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span>🔥</span>
+            <span>FIRE UP</span>
+          </div>
+          <span class="ponto-val" data-en="+1 Range" data-pt="+1 Raio">+1 Range</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span>👟</span>
+            <span>SPEED SKATE</span>
+          </div>
+          <span class="ponto-val" data-en="+Speed" data-pt="+Passo">+Speed</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span>❤️</span>
+            <span data-en="SHIELD" data-pt="ESCUDO">SHIELD</span>
+          </div>
+          <span class="ponto-val" data-en="Shield 1 Hit" data-pt="Protege 1 Dano">Shield 1 Hit</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span>🚪</span>
+            <span data-en="PORTAL" data-pt="PORTAL">PORTAL</span>
+          </div>
+          <span class="ponto-val" style="color:#4ade80;" data-en="Next Stage" data-pt="Próxima Fase">Next Stage</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catálogo de Inimigos -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="BESTIARY & POINTS" data-pt="BESTIÁRIO & PONTOS">BESTIARY & POINTS</span>
+      </div>
+      <div class="tabela-itens">
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span style="color:#f97316;">🟠</span>
+            <span data-en="BALLOM (Balloon)" data-pt="BALLOM (Balão)">BALLOM (Balloon)</span>
+          </div>
+          <span class="ponto-val">100 pts</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span style="color:#0ea5e9;">💧</span>
+            <span data-en="ONIL (Blue Drop)" data-pt="ONIL (Gota Azul)">ONIL (Blue Drop)</span>
+          </div>
+          <span class="ponto-val">200 pts</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span style="color:#ef4444;">⭐</span>
+            <span data-en="DAHL (Star)" data-pt="DAHL (Estrela)">DAHL (Star)</span>
+          </div>
+          <span class="ponto-val">400 pts</span>
+        </div>
+        <div class="linha-item">
+          <div class="alvo-rotulo">
+            <span style="color:#a855f7;">👾</span>
+            <span data-en="MINVO (Agile)" data-pt="MINVO (Ágil)">MINVO (Agile)</span>
+          </div>
+          <span class="ponto-val">800 pts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dicas Táticas -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="STRATEGY & GUIDE" data-pt="ESTRATÉGIA & GUIA">STRATEGY & GUIDE</span>
+      </div>
+      <p style="font-size:11px; line-height:1.6; color:#94a3b8;" data-en="1. <b>Corner Assist:</b> Slide smoothly around corners without getting stuck.<br>2. <b>Watch the Fire:</b> Flames also incinerate exposed power-up items!<br>3. <b>Chain Reaction:</b> Bombs caught in explosions detonate instantly." data-pt="1. <b>Corner Assist:</b> O personagem desliza suavemente em esquinas sem travar nas quinas dos pilares.<br>2. <b>Cuidado com o Fogo:</b> Chamas também vaporizam power-ups expostos!<br>3. <b>Reação em Cadeia:</b> Uma bomba tocada por fogo detona instantaneamente.">
+        1. <b>Corner Assist:</b> Slide smoothly around corners without getting stuck.<br>
+        2. <b>Watch the Fire:</b> Flames also incinerate exposed power-up items!<br>
+        3. <b>Chain Reaction:</b> Bombs caught in explosions detonate instantly.
+      </p>
+    </div>
+  </aside>
+
+  <!-- ARENA CENTRAL DO JOGO -->
+  <main id="arena-container">
+    <div class="gabinete-topo">
+      <div class="gabinete-titulo">
+        <span>💣</span> SUPER BOMBERMAN &middot; SNES 16-BIT
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:11px; color:#64748b;">ARENA 15&times;13</span>
+        <button class="btn-lang-toggle btn-topo-toggle" onclick="alternarIdioma()" type="button" title="Switch Language / Alternar Idioma">🇺🇸 EN &middot; PT</button>
+        <button id="btn-toggle-paineis" class="btn-topo-toggle" type="button" title="Toggle Full View" data-en="&#9697; MAXIMIZE VIEW" data-pt="&#9697; MAXIMIZAR TELA">&#9697; MAXIMIZE VIEW</button>
+      </div>
+    </div>
+
+    <div class="viewport-gabinete">
+      <div id="arena-frame">
+        <canvas id="tela" width="600" height="520"></canvas>
+        <div class="crt-overlay"></div>
+        <div class="reflexo-vidro"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PAINEL LATERAL DIREITO: TELEMETRIA & CONTROLES -->
+  <aside id="painel-dir" class="painel-lateral">
+    <!-- Telemetria do Jogador -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="ARENA TELEMETRY" data-pt="TELEMETRIA DA ARENA">ARENA TELEMETRY</span>
+      </div>
+      <div class="telemetria-grid">
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Score" data-pt="Pontuação">Score</div>
+          <div id="tele-score" class="tele-val" style="color:#facc15;">000.000</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="High Score" data-pt="Recorde">High Score</div>
+          <div id="tele-highscore" class="tele-val">000.000</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Stage" data-pt="Fase">Stage</div>
+          <div id="tele-stage" class="tele-val" style="color:#38bdf8;">1</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Lives" data-pt="Vidas">Lives</div>
+          <div id="tele-lives" class="tele-val" style="color:#4ade80;">3 ❤️</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Bombs" data-pt="Bombas">Bombs</div>
+          <div id="tele-bombs" class="tele-val">0 / 1</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Fire Range" data-pt="Raio do Fogo">Fire Range</div>
+          <div id="tele-fire" class="tele-val" style="color:#f97316;">1 tile</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Time" data-pt="Tempo">Time</div>
+          <div id="tele-time" class="tele-val">200s</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Enemies" data-pt="Inimigos">Enemies</div>
+          <div id="tele-enemies" class="tele-val" style="color:#ef4444;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hall da Fama -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="HALL OF FAME" data-pt="HALL DA FAMA">HALL OF FAME</span>
+        <span style="color:#facc15;">TOP SCORES</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">1. HUD</span>
+        <span id="rank-top" class="ranking-pts">085.000</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">2. BOM</span>
+        <span class="ranking-pts">062.400</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">3. SNE</span>
+        <span class="ranking-pts">044.100</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">4. RET</span>
+        <span class="ranking-pts">028.900</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome" data-en="5. YOU" data-pt="5. VOCÊ">5. YOU</span>
+        <span id="rank-voce" class="ranking-pts">000.000</span>
+      </div>
+    </div>
+
+    <!-- Comandos e Ações -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="ACTIONS & CONTROLS" data-pt="AÇÕES & CONTROLES">ACTIONS & CONTROLS</span>
+      </div>
+      <div class="botoes-coluna">
+        <button id="btn-jogar" class="btn-acao btn-principal" type="button" data-en="💣 START / RESTART" data-pt="💣 INICIAR / REINICIAR">
+          💣 START / RESTART
+        </button>
+        <button id="btn-pausa" class="btn-acao" type="button" data-en="⏸ PAUSE (P)" data-pt="⏸ PAUSAR (P)">
+          ⏸ PAUSE (P)
+        </button>
+        <button id="btn-som" class="btn-acao" type="button" data-en="🔊 SOUND: ON (M)" data-pt="🔊 SOM: ATIVADO (M)">
+          🔊 SOUND: ON (M)
+        </button>
+      </div>
+    </div>
+
+    <!-- Mapa do Teclado -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="KEYBOARD MAP" data-pt="MAPA DE TECLAS">KEYBOARD MAP</span>
+      </div>
+      <div style="font-size:10px; line-height:1.7; color:#cbd5e1;" data-en="<div><b>WASD</b> or <b>Arrow Keys:</b> Move Bomberman</div><div><b>SPACE</b> / <b>ENTER</b> / <b>X:</b> Drop Bomb</div><div><b>P:</b> Pause Game</div><div><b>M:</b> Mute / Unmute Audio Synthesizer</div>" data-pt="<div><b>WASD</b> ou <b>Setas:</b> Mover Bomberman</div><div><b>ESPAÇO</b> / <b>ENTER</b> / <b>X:</b> Plantar Bomba</div><div><b>P:</b> Pausar o Jogo</div><div><b>M:</b> Ligar / Desligar Som e Sintetizador</div>">
+        <div><b>WASD</b> or <b>Arrow Keys:</b> Move Bomberman</div>
+        <div><b>SPACE</b> / <b>ENTER</b> / <b>X:</b> Drop Bomb</div>
+        <div><b>P:</b> Pause Game</div>
+        <div><b>M:</b> Mute / Unmute Audio Synthesizer</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="roteador.js"></script>
+<script src="bomberman.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById('tela');
+  const layout = document.getElementById('arcade-layout');
+  const btnTogglePaineis = document.getElementById('btn-toggle-paineis');
+
+  // Elementos da telemetria
+  const elScore = document.getElementById('tele-score');
+  const elHighScore = document.getElementById('tele-highscore');
+  const elStage = document.getElementById('tele-stage');
+  const elLives = document.getElementById('tele-lives');
+  const elBombs = document.getElementById('tele-bombs');
+  const elFire = document.getElementById('tele-fire');
+  const elTime = document.getElementById('tele-time');
+  const elEnemies = document.getElementById('tele-enemies');
+  const elRankTop = document.getElementById('rank-top');
+  const elRankVoce = document.getElementById('rank-voce');
+
+  // Botões
+  const btnJogar = document.getElementById('btn-jogar');
+  const btnPausa = document.getElementById('btn-pausa');
+  const btnSom = document.getElementById('btn-som');
+
+  const arenaFrame = document.getElementById('arena-frame');
+
+  // Redimensiona para preencher toda a área central preservando proporção
+  function redimensionarArena() {
+    const container = document.querySelector('.viewport-gabinete');
+    if (!container || !arenaFrame) return;
+
+    const rect = container.getBoundingClientRect();
+    const pad = 10;
+    const maxW = Math.max(100, rect.width - pad);
+    const maxH = Math.max(100, rect.height - pad);
+    const proporcao = 600 / 520; // 1.1538
+
+    let h = maxH;
+    let w = h * proporcao;
+
+    if (w > maxW) {
+      w = maxW;
+      h = w / proporcao;
+    }
+
+    const finalW = Math.floor(w);
+    const finalH = Math.floor(h);
+
+    arenaFrame.style.width = finalW + 'px';
+    arenaFrame.style.height = finalH + 'px';
+  }
+
+  window.addEventListener('resize', redimensionarArena);
+  setTimeout(redimensionarArena, 20);
+  setTimeout(redimensionarArena, 150);
+
+  // Alternar painéis laterais (Maximizar tela)
+  btnTogglePaineis.addEventListener('click', function () {
+    layout.classList.toggle('max-view');
+    const isMax = layout.classList.contains('max-view');
+    const isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
+    btnTogglePaineis.textContent = isMax ? (isPt ? '🗗 RESTAURAR PAINÉIS' : '🗗 RESTORE PANELS') : (isPt ? '🗖 MAXIMIZAR TELA' : '🗖 MAXIMIZE VIEW');
+    setTimeout(redimensionarArena, 260);
+    redimensionarArena();
+  });
+
+  // Inicializa o motor do Bomberman
+  const game = new Bomberman.BombermanGame(canvas, {
+    onHudUpdate: function (info) {
+      const isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
+      if (elScore) elScore.textContent = String(info.score).padStart(6, '0');
+      if (elHighScore) elHighScore.textContent = String(info.highScore).padStart(6, '0');
+      if (elStage) elStage.textContent = String(info.stage);
+      if (elLives) elLives.textContent = `${info.lives} ${info.hasHeart ? (isPt ? '❤️ (Escudo)' : '❤️ (Shield)') : '❤️'}`;
+      if (elBombs) elBombs.textContent = `${info.bombs} / ${info.maxBombs}`;
+      if (elFire) elFire.textContent = `${info.fireRange} ${info.fireRange > 1 ? (isPt ? 'blocos' : 'tiles') : (isPt ? 'bloco' : 'tile')}`;
+      if (elTime) elTime.textContent = `${info.timeRemaining}s`;
+      if (elEnemies) elEnemies.textContent = String(info.enemiesLeft);
+
+      if (elRankVoce) elRankVoce.textContent = String(info.score).padStart(6, '0');
+      if (elRankTop && info.highScore > 85000) {
+        elRankTop.textContent = String(info.highScore).padStart(6, '0');
+      }
+
+      if (btnPausa) {
+        btnPausa.textContent = info.state === 'paused' ? (isPt ? '▶ CONTINUAR (P)' : '▶ RESUME (P)') : (isPt ? '⏸ PAUSAR (P)' : '⏸ PAUSE (P)');
+      }
+      if (btnSom) {
+        btnSom.textContent = info.sound ? (isPt ? '🔊 SOM: ATIVADO (M)' : '🔊 SOUND: ON (M)') : (isPt ? '🔇 SOM: MUDO (M)' : '🔇 SOUND: MUTED (M)');
+      }
+    }
+  });
+
+  btnJogar.addEventListener('click', function () {
+    game.startNewGame();
+    canvas.focus();
+  });
+
+  btnPausa.addEventListener('click', function () {
+    game.togglePause();
+  });
+
+  btnSom.addEventListener('click', function () {
+    game.toggleSound();
+  });
+
+  // Clique na tela inicia o jogo se estiver na tela de abertura
+  canvas.addEventListener('click', function () {
+    if (game.state === 'start' || game.state === 'gameover') {
+      game.startNewGame();
+    } else if (game.state === 'stageclear') {
+      game.nextStage();
+    }
+  });
+
+  // Inicia loop de renderização do jogo
+  game.startLoop();
+})();
+</script>
+</body>
+</html>

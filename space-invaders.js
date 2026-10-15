@@ -912,12 +912,13 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(8, 8, LARGURA - 16, ALTURA - 16);
 
-      // HUD Superior: SCORE <1>, HI-SCORE, ONDA, VIDAS
+      // HUD Superior: SCORE <1>, HI-SCORE, WAVE/ONDA, VIDAS
+      const isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
       ctx.font = '12px ui-monospace, "Cascadia Mono", monospace';
       ctx.fillStyle = CORES.cinza;
       ctx.fillText('SCORE <1>', 24, 28);
       ctx.fillText('HI-SCORE', LARGURA / 2 - 32, 28);
-      ctx.fillText('ONDA', LARGURA - 76, 28);
+      ctx.fillText(isPt ? 'ONDA' : 'WAVE', LARGURA - 76, 28);
 
       ctx.font = 'bold 15px ui-monospace, "Cascadia Mono", monospace';
       ctx.fillStyle = CORES.branco;
@@ -1067,32 +1068,33 @@
       ctx.strokeRect(28, 70, LARGURA - 56, ALTURA - 140);
 
       ctx.font = 'bold 26px ui-monospace, "Cascadia Mono", monospace';
+      const isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
       ctx.textAlign = 'center';
       ctx.fillStyle = CORES.verde;
       ctx.fillText('SPACE INVADERS', LARGURA / 2, 130);
 
       ctx.font = '11px ui-monospace, "Cascadia Mono", monospace';
       ctx.fillStyle = CORES.cinza;
-      ctx.fillText('* TABELA DE PONTUAÇÃO *', LARGURA / 2, 172);
+      ctx.fillText(isPt ? '* TABELA DE PONTUAÇÃO *' : '* SCORE ADVANCE TABLE *', LARGURA / 2, 172);
 
       // Tabela de pontuação clássica
       desenharMatriz(SPRITES.ufo, LARGURA / 2 - 80, 204, 1.8, CORES.vermelho);
       ctx.font = 'bold 13px ui-monospace, monospace';
       ctx.fillStyle = CORES.vermelho;
       ctx.textAlign = 'left';
-      ctx.fillText('= ? MISTÉRIO (50 - 300)', LARGURA / 2 - 40, 218);
+      ctx.fillText(isPt ? '= ? MISTÉRIO (50 - 300)' : '= ? MYSTERY (50 - 300)', LARGURA / 2 - 40, 218);
 
       desenharMatriz(SPRITES.squid1, LARGURA / 2 - 76, 246, 2.0, CORES.rosa);
       ctx.fillStyle = CORES.rosa;
-      ctx.fillText('= 30 PONTOS', LARGURA / 2 - 40, 260);
+      ctx.fillText(isPt ? '= 30 PONTOS' : '= 30 POINTS', LARGURA / 2 - 40, 260);
 
       desenharMatriz(SPRITES.crab1, LARGURA / 2 - 78, 288, 2.0, CORES.ciano);
       ctx.fillStyle = CORES.ciano;
-      ctx.fillText('= 20 PONTOS', LARGURA / 2 - 40, 302);
+      ctx.fillText(isPt ? '= 20 PONTOS' : '= 20 POINTS', LARGURA / 2 - 40, 302);
 
       desenharMatriz(SPRITES.octo1, LARGURA / 2 - 80, 330, 2.0, CORES.verde);
       ctx.fillStyle = CORES.verde;
-      ctx.fillText('= 10 PONTOS', LARGURA / 2 - 40, 344);
+      ctx.fillText(isPt ? '= 10 PONTOS' : '= 10 POINTS', LARGURA / 2 - 40, 344);
 
       // Canhão do jogador
       desenharMatriz(SPRITES.canhao, LARGURA / 2 - 14, 390, 2.15, CORES.verde);
@@ -1102,13 +1104,13 @@
       const pisca = Math.sin(tempoDecorrido * 4) > 0;
       ctx.font = 'bold 15px ui-monospace, monospace';
       ctx.fillStyle = pisca ? CORES.amarelo : 'transparent';
-      ctx.fillText('PRESSIONE ENTER OU TOQUE', LARGURA / 2, 452);
+      ctx.fillText(isPt ? 'PRESSIONE ENTER OU TOQUE' : 'PRESS ENTER OR TAP TO PLAY', LARGURA / 2, 452);
 
       ctx.font = '12px ui-monospace, monospace';
       ctx.fillStyle = CORES.cinza;
-      ctx.fillText('← → ou A / D movem o canhão', LARGURA / 2, 490);
-      ctx.fillText('ESPAÇO dispara · P pausa · M som', LARGURA / 2, 510);
-      ctx.fillText('RECORDE ATUAL: ' + String(recorde).padStart(6, '0'), LARGURA / 2, 545);
+      ctx.fillText(isPt ? '← → ou A / D movem o canhão' : '← → or A / D move cannon', LARGURA / 2, 490);
+      ctx.fillText(isPt ? 'ESPAÇO dispara · P pausa · M som' : 'SPACE fires · P pause · M sound', LARGURA / 2, 510);
+      ctx.fillText((isPt ? 'RECORDE ATUAL: ' : 'HIGH SCORE: ') + String(recorde).padStart(6, '0'), LARGURA / 2, 545);
 
       ctx.textAlign = 'left';
     }
@@ -1132,6 +1134,7 @@
     }
 
     function desenharTelaFim() {
+      const isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
       ctx.fillStyle = 'rgba(5, 7, 15, 0.92)';
       ctx.fillRect(40, 210, LARGURA - 80, 220);
       ctx.strokeStyle = CORES.rosa;
@@ -1145,22 +1148,22 @@
 
       ctx.font = '14px ui-monospace, monospace';
       ctx.fillStyle = CORES.branco;
-      ctx.fillText('PONTUAÇÃO FINAL: ' + String(pontos).padStart(6, '0'), LARGURA / 2, 305);
+      ctx.fillText((isPt ? 'PONTUAÇÃO FINAL: ' : 'FINAL SCORE: ') + String(pontos).padStart(6, '0'), LARGURA / 2, 305);
 
       if (novoRecorde) {
         ctx.font = 'bold 13px ui-monospace, monospace';
         ctx.fillStyle = CORES.amarelo;
-        ctx.fillText('★ NOVO RECORDE ALCANÇADO! ★', LARGURA / 2, 335);
+        ctx.fillText(isPt ? '★ NOVO RECORDE ALCANÇADO! ★' : '★ NEW HIGH SCORE ACHIEVED! ★', LARGURA / 2, 335);
       } else {
         ctx.font = '12px ui-monospace, monospace';
         ctx.fillStyle = CORES.cinza;
-        ctx.fillText('RECORDE: ' + String(recorde).padStart(6, '0'), LARGURA / 2, 335);
+        ctx.fillText((isPt ? 'RECORDE: ' : 'RECORD: ') + String(recorde).padStart(6, '0'), LARGURA / 2, 335);
       }
 
       ctx.font = 'bold 14px ui-monospace, monospace';
       const pisca = Math.sin(tempoDecorrido * 4) > 0;
       ctx.fillStyle = pisca ? CORES.verde : 'transparent';
-      ctx.fillText('PRESSIONE ENTER PARA JOGAR', LARGURA / 2, 385);
+      ctx.fillText(isPt ? 'PRESSIONE ENTER PARA JOGAR' : 'PRESS ENTER TO PLAY AGAIN', LARGURA / 2, 385);
 
       ctx.textAlign = 'left';
     }

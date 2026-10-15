@@ -281,7 +281,10 @@
 <div id="arcade-layout">
   <!-- ==================== PAINEL ESQUERDO: DMD & MISSÕES ==================== -->
   <aside id="painel-esq" class="painel-lateral">
-    <a id="voltar" href="index.html">&larr; VOLTAR AOS JOGOS</a>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <a id="voltar" href="index.html" data-en="&larr; BACK TO GAMES" data-pt="&larr; VOLTAR AOS JOGOS">&larr; BACK TO GAMES</a>
+      <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="padding:5px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;border-radius:6px;font-family:inherit;font-size:10px;font-weight:800;cursor:pointer;">🇺🇸 EN &middot; PT</button>
+    </div>
 
     <!-- Retro Dot-Matrix Display -->
     <div id="dmd-container">
@@ -291,19 +294,19 @@
 
     <!-- Card de Missão da Mesa -->
     <div class="card-arcade">
-      <h3>OBJETIVO DA MESA <span class="badge" id="badgeMesa">MESA 1</span></h3>
+      <h3 data-en="TABLE OBJECTIVE <span class='badge' id='badgeMesa'>TABLE 1</span>" data-pt="OBJETIVO DA MESA <span class='badge' id='badgeMesa'>MESA 1</span>">TABLE OBJECTIVE <span class="badge" id="badgeMesa">TABLE 1</span></h3>
       <div id="missaoTexto" style="font-size:12px;line-height:1.5;color:#e2e8f0;font-weight:600;">—</div>
-      <div style="margin-top:10px;font-size:9px;letter-spacing:0.14em;color:#94a3b8;">PROGRESSO MULTIBALL</div>
+      <div style="margin-top:10px;font-size:9px;letter-spacing:0.14em;color:#94a3b8;" data-en="MULTIBALL PROGRESS" data-pt="PROGRESSO MULTIBALL">MULTIBALL PROGRESS</div>
       <div class="lock-lamps">
-        <div class="lock-lamp" id="lockLamp1"><div class="lock-led"></div><span class="lock-label">TRAVA 1</span></div>
-        <div class="lock-lamp" id="lockLamp2"><div class="lock-led"></div><span class="lock-label">TRAVA 2</span></div>
+        <div class="lock-lamp" id="lockLamp1"><div class="lock-led"></div><span class="lock-label" data-en="LOCK 1" data-pt="TRAVA 1">LOCK 1</span></div>
+        <div class="lock-lamp" id="lockLamp2"><div class="lock-led"></div><span class="lock-label" data-en="LOCK 2" data-pt="TRAVA 2">LOCK 2</span></div>
         <div class="lock-lamp" id="lockLamp3"><div class="lock-led"></div><span class="lock-label">MULTIBALL</span></div>
       </div>
     </div>
 
     <!-- Card de Multiplicador de Bônus -->
     <div class="card-arcade">
-      <h3>MULTIPLICADOR DE PONTOS</h3>
+      <h3 data-en="SCORE MULTIPLIER" data-pt="MULTIPLICADOR DE PONTOS">SCORE MULTIPLIER</h3>
       <div class="multi-ladder">
         <div class="multi-step ativo" id="step1">1X</div>
         <div class="multi-step" id="step2">2X</div>
@@ -315,23 +318,23 @@
 
     <!-- Telemetria ao Vivo -->
     <div class="card-arcade">
-      <h3>TELEMETRIA AO VIVO</h3>
+      <h3 data-en="LIVE TELEMETRY" data-pt="TELEMETRIA AO VIVO">LIVE TELEMETRY</h3>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
         <div style="display:flex;justify-content:space-between;">
-          <span style="color:#94a3b8;">Bolas Ativas:</span>
+          <span style="color:#94a3b8;" data-en="Active Balls:" data-pt="Bolas Ativas:">Active Balls:</span>
           <span id="telBolasAtivas" style="color:#6ee7b7;font-weight:800;">1</span>
         </div>
         <div style="display:flex;justify-content:space-between;">
-          <span style="color:#94a3b8;">Proteção Bola Salva:</span>
-          <span id="telBolaSalva" style="color:#38bdf8;font-weight:800;">ATIVA (12s)</span>
+          <span style="color:#94a3b8;" data-en="Ball Save:" data-pt="Proteção Bola Salva:">Ball Save:</span>
+          <span id="telBolaSalva" style="color:#38bdf8;font-weight:800;">ACTIVE (12s)</span>
         </div>
         <div style="display:flex;justify-content:space-between;">
-          <span style="color:#94a3b8;">Kickback Outlane:</span>
-          <span id="telKickback" style="color:#10b981;font-weight:800;">ARMADO</span>
+          <span style="color:#94a3b8;" data-en="Outlane Kickback:" data-pt="Kickback Outlane:">Outlane Kickback:</span>
+          <span id="telKickback" style="color:#10b981;font-weight:800;">ARMED</span>
         </div>
         <div style="display:flex;justify-content:space-between;">
-          <span style="color:#94a3b8;">Sensibilidade Tilt:</span>
-          <span style="color:#f59e0b;font-weight:800;">3 AVISOS</span>
+          <span style="color:#94a3b8;" data-en="Tilt Warning:" data-pt="Sensibilidade Tilt:">Tilt Warning:</span>
+          <span style="color:#f59e0b;font-weight:800;" data-en="3 WARNINGS" data-pt="3 AVISOS">3 WARNINGS</span>
         </div>
       </div>
     </div>
@@ -344,29 +347,29 @@
     <!-- HUD Sobreposto Minimalista -->
     <div id="hud-central">
       <div id="mesa-info-box">
-        <a id="voltar-compacto" href="index.html">&larr; JOGOS</a>
-        <span id="mesa-nome">ESPAÇO</span>
-        <span id="mesa-sub">ÓRBITA PERDIDA</span>
+        <a id="voltar-compacto" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+        <span id="mesa-nome">SPACE</span>
+        <span id="mesa-sub">LOST ORBIT</span>
         <div id="status-badges">
-          <span class="badge-status" id="badgeBallSave">BOLA SALVA</span>
-          <span class="badge-status" id="badgeKickback">KICKBACK ARMADO</span>
+          <span class="badge-status" id="badgeBallSave" data-en="BALL SAVE" data-pt="BOLA SALVA">BALL SAVE</span>
+          <span class="badge-status" id="badgeKickback" data-en="KICKBACK ARMED" data-pt="KICKBACK ARMADO">KICKBACK ARMED</span>
         </div>
       </div>
       <div class="placar-box">
         <div class="placar-col">
-          <span class="placar-rot">PONTUAÇÃO</span>
+          <span class="placar-rot" data-en="SCORE" data-pt="PONTUAÇÃO">SCORE</span>
           <span class="placar-val" id="pontosV">0</span>
         </div>
         <div class="placar-col">
-          <span class="placar-rot">RECORDE</span>
+          <span class="placar-rot" data-en="RECORD" data-pt="RECORDE">RECORD</span>
           <span class="placar-val" id="recordeV" style="color:#94a3b8;">0</span>
         </div>
         <div class="placar-col">
-          <span class="placar-rot">BOLAS</span>
+          <span class="placar-rot" data-en="BALLS" data-pt="BOLAS">BALLS</span>
           <span class="placar-val" id="bolasV">3</span>
         </div>
         <div class="placar-col">
-          <span class="placar-rot">BÔNUS</span>
+          <span class="placar-rot" data-en="BONUS" data-pt="BÔNUS">BONUS</span>
           <span class="placar-val" id="multV">x1</span>
         </div>
       </div>
@@ -377,20 +380,20 @@
 
     <!-- Menu Inicial de Mesas -->
     <div id="menuMesa" class="overlay">
-      <h1>PINBALL 3D<small>5 MESAS RETRO · WEBGL2</small></h1>
+      <h1 data-en="PINBALL 3D<small>5 RETRO TABLES · WEBGL2</small>" data-pt="PINBALL 3D<small>5 MESAS RETRO · WEBGL2</small>">PINBALL 3D<small>5 RETRO TABLES · WEBGL2</small></h1>
       <div id="listaMesas"></div>
-      <button id="botaoJogar">JOGAR PARTIDA</button>
-      <div style="font-size:12px;color:#94a3b8;text-align:center;line-height:1.8;">
-        Use <b>&larr; &rarr;</b> ou <b>A / D</b> para os flippers &middot; <b>ESPAÇO</b> lança a bola<br>
-        <b>Z / X</b> para tremer a mesa (nudge) &middot; <b>1 a 5</b> para alternar mesas
+      <button id="botaoJogar" data-en="START GAME" data-pt="JOGAR PARTIDA">START GAME</button>
+      <div style="font-size:12px;color:#94a3b8;text-align:center;line-height:1.8;" data-en="Use <b>&larr; &rarr;</b> or <b>A / D</b> for flippers &middot; <b>SPACE</b> launches ball<br><b>Z / X</b> to nudge table &middot; <b>1 to 5</b> to switch tables" data-pt="Use <b>&larr; &rarr;</b> ou <b>A / D</b> para os flippers &middot; <b>ESPAÇO</b> lança a bola<br><b>Z / X</b> para tremer a mesa (nudge) &middot; <b>1 a 5</b> para alternar mesas">
+        Use <b>&larr; &rarr;</b> or <b>A / D</b> for flippers &middot; <b>SPACE</b> launches ball<br>
+        <b>Z / X</b> to nudge table &middot; <b>1 to 5</b> to switch tables
       </div>
     </div>
 
     <!-- Overlay de Fim de Jogo -->
     <div id="fimJogo" class="overlay oculto">
-      <h1 id="fimTitulo">FIM DE JOGO<small id="fimSub"></small></h1>
-      <button id="botaoJogar2">JOGAR NOVAMENTE</button>
-      <div style="font-size:12px;color:#94a3b8;">Pressione ENTER ou ESPAÇO para jogar de novo</div>
+      <h1 id="fimTitulo">GAME OVER<small id="fimSub"></small></h1>
+      <button id="botaoJogar2" data-en="PLAY AGAIN" data-pt="JOGAR NOVAMENTE">PLAY AGAIN</button>
+      <div style="font-size:12px;color:#94a3b8;" data-en="Press ENTER or SPACE to play again" data-pt="Pressione ENTER ou ESPAÇO para jogar de novo">Press ENTER or SPACE to play again</div>
     </div>
   </main>
 
@@ -398,7 +401,10 @@
   <aside id="painel-dir" class="painel-lateral">
     <!-- Hall da Fama / Recordes -->
     <div class="card-arcade">
-      <h3>HALL DA FAMA <span class="badge">TOP SCORES</span></h3>
+      <div class="card-titulo">
+        <span data-en="HALL OF FAME" data-pt="HALL DA FAMA">HALL OF FAME</span>
+        <span style="color:#facc15;">TOP SCORES</span>
+      </div>
       <div class="rank-lista">
         <div class="rank-item destaque"><span class="pos">1.</span><span class="sigla">LAY</span><span class="pts" id="topScore1">150.000</span></div>
         <div class="rank-item"><span class="pos">2.</span><span class="sigla">RET</span><span class="pts" id="topScore2">98.400</span></div>
@@ -410,44 +416,44 @@
 
     <!-- Controle do Lançador (Plunger) -->
     <div class="card-arcade">
-      <h3>LANÇADOR DE BOLA <span class="badge" id="badgeLancador">PRONTO</span></h3>
+      <h3 data-en="BALL LAUNCHER <span class='badge' id='badgeLancador'>READY</span>" data-pt="LANÇADOR DE BOLA <span class='badge' id='badgeLancador'>PRONTO</span>">BALL LAUNCHER <span class="badge" id="badgeLancador">READY</span></h3>
       <div class="plunger-track">
         <div class="plunger-fill" id="plungerFill"></div>
       </div>
-      <button class="btn-arcade btn-plunger" id="btnLancarClick">
-        🚀 DISPARAR BOLA (ESPAÇO)
+      <button class="btn-arcade btn-plunger" id="btnLancarClick" data-en="🚀 LAUNCH BALL (SPACE)" data-pt="🚀 DISPARAR BOLA (ESPAÇO)">
+        🚀 LAUNCH BALL (SPACE)
       </button>
     </div>
 
     <!-- Mecanismo de Tremer (Nudge / Tilt) -->
     <div class="card-arcade">
-      <h3>TREMER A MESA <span class="badge">FÍSICA REAL</span></h3>
+      <h3 data-en="NUDGE TABLE <span class='badge'>REAL PHYSICS</span>" data-pt="TREMER A MESA <span class='badge'>FÍSICA REAL</span>">NUDGE TABLE <span class="badge">REAL PHYSICS</span></h3>
       <div class="tilt-status">
-        <div class="tilt-lamp" id="tiltAviso1">AVISO 1</div>
-        <div class="tilt-lamp" id="tiltAviso2">AVISO 2</div>
+        <div class="tilt-lamp" id="tiltAviso1" data-en="WARN 1" data-pt="AVISO 1">WARN 1</div>
+        <div class="tilt-lamp" id="tiltAviso2" data-en="WARN 2" data-pt="AVISO 2">WARN 2</div>
         <div class="tilt-lamp" id="tiltPerigo">TILT!</div>
       </div>
-      <button class="btn-arcade btn-nudge" id="btnTremerClick">
-        📳 SACUDIR MESA (Z / X)
+      <button class="btn-arcade btn-nudge" id="btnTremerClick" data-en="📳 SHAKE TABLE (Z / X)" data-pt="📳 SACUDIR MESA (Z / X)">
+        📳 SHAKE TABLE (Z / X)
       </button>
       <div class="nudge-botoes-grupo">
-        <button class="btn-nudge-sub" id="btnTremerEsq">&larr; ESQ (Z)</button>
-        <button class="btn-nudge-sub" id="btnTremerCima">&uarr; CIMA (X)</button>
-        <button class="btn-nudge-sub" id="btnTremerDir">DIR &rarr; (C)</button>
+        <button class="btn-nudge-sub" id="btnTremerEsq" data-en="&larr; LEFT (Z)" data-pt="&larr; ESQ (Z)">&larr; LEFT (Z)</button>
+        <button class="btn-nudge-sub" id="btnTremerCima" data-en="&uarr; UP (X)" data-pt="&uarr; CIMA (X)">&uarr; UP (X)</button>
+        <button class="btn-nudge-sub" id="btnTremerDir" data-en="RIGHT &rarr; (C)" data-pt="DIR &rarr; (C)">RIGHT &rarr; (C)</button>
       </div>
     </div>
 
     <!-- Guia de Teclas Rápidas -->
     <div class="card-arcade">
-      <h3>CONTROLES DO TECLADO</h3>
+      <h3 data-en="KEYBOARD CONTROLS" data-pt="CONTROLES DO TECLADO">KEYBOARD CONTROLS</h3>
       <div class="teclas-tabela">
-        <div class="tecla-linha"><span class="tecla-cap">◄ &nbsp; ► &nbsp; ou &nbsp; A / D</span><span class="tecla-desc">Flippers</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">Shift Esq / Shift Dir</span><span class="tecla-desc">Flippers Arcade</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">ESPAÇO / ENTER</span><span class="tecla-desc">Lançar Bola</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">Z &nbsp; / &nbsp; X &nbsp; / &nbsp; C</span><span class="tecla-desc">Tremer Mesa</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">1 .. 5 &nbsp; ou &nbsp; N</span><span class="tecla-desc">Trocar Mesa</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">M</span><span class="tecla-desc">Mudo / Som</span></div>
-        <div class="tecla-linha"><span class="tecla-cap">P / ESC</span><span class="tecla-desc">Pausa</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">◄ &nbsp; ► &nbsp; or &nbsp; A / D</span><span class="tecla-desc" data-en="Flippers" data-pt="Flippers">Flippers</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">Shift Left / Right</span><span class="tecla-desc" data-en="Arcade Flippers" data-pt="Flippers Arcade">Arcade Flippers</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">SPACE / ENTER</span><span class="tecla-desc" data-en="Launch Ball" data-pt="Lançar Bola">Launch Ball</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">Z &nbsp; / &nbsp; X &nbsp; / &nbsp; C</span><span class="tecla-desc" data-en="Nudge Table" data-pt="Tremer Mesa">Nudge Table</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">1 .. 5 &nbsp; or &nbsp; N</span><span class="tecla-desc" data-en="Switch Table" data-pt="Trocar Mesa">Switch Table</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">M</span><span class="tecla-desc" data-en="Mute / Sound" data-pt="Mudo / Som">Mute / Sound</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">P / ESC</span><span class="tecla-desc" data-en="Pause" data-pt="Pausa">Pause</span></div>
       </div>
     </div>
   </aside>

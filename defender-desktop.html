@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020617">
+<title>DEFENDER — Arcade Desktop</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#020617; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ------------------- ESTRUTURA GERAL ARCADE ------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0c1527 0%, #020617 100%);
+  }
+
+  /* Painéis laterais retro */
+  .painel-lateral {
+    width:320px; flex-shrink:0; height:100%; display:flex; flex-direction:column;
+    gap:14px; padding:18px 16px; background:rgba(15,23,42,0.85);
+    border-right:1px solid rgba(239,68,68,0.25);
+    backdrop-filter:blur(8px); z-index:10; overflow-y:auto;
+    transition:margin 0.25s ease, opacity 0.25s ease;
+  }
+  #painel-dir {
+    border-right:none; border-left:1px solid rgba(239,68,68,0.25);
+  }
+
+  /* Estado maximizado (painéis recolhidos) */
+  #arcade-layout.max-view #painel-esq { margin-left:-320px; opacity:0; pointer-events:none; }
+  #arcade-layout.max-view #painel-dir { margin-right:-320px; opacity:0; pointer-events:none; }
+
+  #voltar-link {
+    color:#ef4444; text-decoration:none; font-size:11px; font-weight:800;
+    letter-spacing:0.12em; display:inline-flex; align-items:center; gap:6px;
+    transition:transform 0.15s, color 0.15s;
+  }
+  #voltar-link:hover { color:#f87171; transform:translateX(-3px); }
+
+  @media (max-width: 1080px) {
+    .painel-lateral { display:none !important; }
+  }
+
+  /* Container central da arena */
+  #arena-container {
+    flex:1; height:100%; position:relative; display:flex;
+    flex-direction:column; align-items:stretch; justify-content:stretch;
+    overflow:hidden; box-shadow:inset 0 0 70px rgba(0,0,0,0.95);
+  }
+
+  /* Barra de Topo do Gabinete */
+  .gabinete-topo {
+    width:100%; height:44px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px; background:rgba(2,6,23,0.7); border-bottom:1px solid rgba(255,255,255,0.06);
+    flex-shrink:0; z-index:5;
+  }
+  .gabinete-titulo {
+    font-size:13px; font-weight:900; letter-spacing:0.18em; color:#f87171;
+    display:flex; align-items:center; gap:8px; text-shadow:0 0 10px rgba(239,68,68,0.5);
+  }
+  .btn-topo-toggle {
+    background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35);
+    color:#f87171; border-radius:6px; padding:5px 10px; font-size:10px;
+    font-weight:800; letter-spacing:0.1em; cursor:pointer; font-family:inherit;
+    transition:all 0.15s;
+  }
+  .btn-topo-toggle:hover { background:rgba(239,68,68,0.25); color:#ffffff; }
+
+  /* Viewport da tela do jogo preenchendo toda a área central */
+  .viewport-gabinete {
+    flex:1; width:100%; height:calc(100% - 44px); position:relative; display:flex;
+    align-items:center; justify-content:center; overflow:hidden; padding:8px;
+  }
+
+  #arena-frame {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 45px rgba(0,0,0,0.95), 0 0 0 2px rgba(239,68,68,0.35);
+    border-radius:12px; overflow:hidden; background:#000;
+  }
+
+  #tela {
+    display:block; width:100%; height:100%;
+    cursor:crosshair; image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+
+  /* Linhas CRT e Vidro */
+  .crt-overlay {
+    position:absolute; inset:0; pointer-events:none; z-index:3;
+    background:linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%),
+               linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02));
+    background-size:100% 3px, 6px 100%; opacity:0.6;
+  }
+  .reflexo-vidro {
+    position:absolute; inset:0; pointer-events:none; z-index:4;
+    background:linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 30%, transparent 60%);
+  }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.85) 100%);
+    border:1px solid rgba(239,68,68,0.22); border-radius:12px;
+    padding:12px 14px; box-shadow:0 4px 18px rgba(0,0,0,0.5);
+  }
+
+  .card-titulo {
+    font-size:10px; font-weight:800; letter-spacing:0.16em; color:#94a3b8;
+    text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+
+  .tabela-itens {
+    display:flex; flex-direction:column; gap:8px; font-size:11px;
+  }
+  .linha-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:5px 8px; background:rgba(2,6,23,0.45); border-radius:6px;
+    border:1px solid rgba(255,255,255,0.04);
+  }
+  .rotulo-item { display:flex; align-items:center; gap:8px; color:#cbd5e1; font-weight:600; }
+  .icone-tag {
+    display:inline-block; width:18px; height:18px; line-height:18px; text-align:center;
+    border-radius:4px; font-size:11px;
+  }
+  .tag-lander { background:#16a34a; color:#fff; }
+  .tag-mutant { background:#dc2626; color:#fff; }
+  .tag-bomber { background:#2563eb; color:#fff; }
+  .tag-pod { background:#f59e0b; color:#000; }
+  .tag-baiter { background:#9333ea; color:#fff; }
+  .tag-human { background:#06b6d4; color:#000; }
+
+  .valor-item { font-family:inherit; font-weight:800; color:#f8fafc; }
+
+  /* Grid de estatísticas */
+  .grid-stats {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  }
+  .stat-box {
+    background:rgba(2,6,23,0.6); border:1px solid rgba(239,68,68,0.2);
+    border-radius:8px; padding:8px; text-align:center;
+  }
+  .stat-label { font-size:8px; color:#94a3b8; letter-spacing:0.12em; text-transform:uppercase; }
+  .stat-val { font-size:18px; font-weight:900; color:#ef4444; margin-top:2px; text-shadow:0 0 8px rgba(239,68,68,0.4); }
+
+  /* Guia de Teclas */
+  .grid-teclas {
+    display:flex; flex-direction:column; gap:6px; font-size:11px;
+  }
+  .linha-tecla {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:4px 6px; border-bottom:1px dashed rgba(255,255,255,0.06);
+  }
+  .tecla-kbd {
+    background:#1e293b; border:1px solid #475569; border-radius:4px;
+    padding:2px 6px; font-size:9px; font-weight:800; color:#f8fafc;
+    box-shadow:0 2px 0 #020617;
+  }
+
+  /* Botões de Ação */
+  .btn-acao {
+    width:100%; padding:10px; border-radius:8px; font-family:inherit;
+    font-size:11px; font-weight:800; letter-spacing:0.12em; cursor:pointer;
+    border:none; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-iniciar {
+    background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+    color:#ffffff; box-shadow:0 0 16px rgba(239,68,68,0.4);
+  }
+  .btn-iniciar:hover { transform:scale(1.02); box-shadow:0 0 22px rgba(239,68,68,0.6); }
+  .btn-secundario {
+    background:#1e293b; border:1px solid #475569; color:#cbd5e1;
+  }
+  .btn-secundario:hover { background:#334155; color:#ffffff; }
+
+  /* Placar Arcade */
+  .placar-arcade {
+    text-align:center; padding:10px 0; background:rgba(0,0,0,0.4);
+    border-radius:8px; border:1px solid rgba(239,68,68,0.25);
+  }
+  .placar-rotulo { font-size:9px; letter-spacing:0.2em; color:#94a3b8; }
+  .placar-num { font-size:28px; font-weight:900; color:#ef4444; letter-spacing:0.08em; text-shadow:0 0 12px rgba(239,68,68,0.6); }
+
+  .btn-lang-toggle {
+    background:#0f172a; border:1px solid rgba(239,68,68,0.3); border-radius:6px;
+    color:#cbd5e1; font-size:10px; font-weight:800; padding:4px 8px; cursor:pointer;
+    font-family:inherit; transition:all 0.15s;
+  }
+  .btn-lang-toggle:hover { border-color:#ef4444; color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+  <!-- PAINEL ESQUERDO: CONTROLES, STATUS E MISSÃO -->
+  <aside class="painel-lateral" id="painel-esq">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <a href="index.html" id="voltar-link">
+        <span>&larr;</span>
+        <span data-en="EXIT TO ARCADE" data-pt="VOLTAR AO MENU">EXIT TO ARCADE</span>
+      </a>
+      <button type="button" class="btn-lang-toggle" onclick="alternarIdioma()">🇺🇸 EN &middot; PT</button>
+    </div>
+
+    <!-- PLACAR PRINCIPAL -->
+    <div class="card-arcade placar-arcade">
+      <div class="placar-rotulo" data-en="PLAYER SCORE" data-pt="PONTUAÇÃO">PLAYER SCORE</div>
+      <div class="placar-num" id="hud-score">000000</div>
+    </div>
+
+    <!-- ESTATÍSTICAS DA NAVE -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="SHIP STATUS" data-pt="STATUS DA NAVE">SHIP STATUS</span>
+        <span style="color:#ef4444;">DEF-01</span>
+      </div>
+      <div class="grid-stats">
+        <div class="stat-box">
+          <div class="stat-label" data-en="WAVE" data-pt="ONDA">WAVE</div>
+          <div class="stat-val" id="hud-wave">1</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-en="SHIPS" data-pt="NAVIO">SHIPS</div>
+          <div class="stat-val" id="hud-lives">3</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-en="SMART BOMBS" data-pt="BOMBAS INTEL">SMART BOMBS</div>
+          <div class="stat-val" id="hud-bombs">3</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-en="HUMANOIDS" data-pt="HUMANOS">HUMANOIDS</div>
+          <div class="stat-val" id="hud-humans" style="color:#38bdf8;">10</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECLAS DE CONTROLE -->
+    <div class="card-arcade">
+      <div class="card-titulo" data-en="FLIGHT CONTROLS" data-pt="CONTROLES DE VOO">FLIGHT CONTROLS</div>
+      <div class="grid-teclas">
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Up / Climb" data-pt="Subir">Up / Climb</span>
+          <span class="tecla-kbd">&uarr; / W</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Down / Dive" data-pt="Descer">Down / Dive</span>
+          <span class="tecla-kbd">&darr; / S</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Thrust / Boost" data-pt="Propulsão">Thrust / Boost</span>
+          <span class="tecla-kbd">&rarr; / D / SHIFT</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Reverse Direction" data-pt="Inverter Direção">Reverse Direction</span>
+          <span class="tecla-kbd">&larr; / A / R</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Rapid Laser Fire" data-pt="Disparar Laser">Rapid Laser Fire</span>
+          <span class="tecla-kbd">SPACE / X</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Smart Bomb EMP" data-pt="Bomba Inteligente">Smart Bomb EMP</span>
+          <span class="tecla-kbd">B / E</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Hyperspace Jump" data-pt="Salto Hiperespaço">Hyperspace Jump</span>
+          <span class="tecla-kbd">H / Q</span>
+        </div>
+        <div class="linha-tecla">
+          <span style="color:#cbd5e1;" data-en="Pause Game" data-pt="Pausar Jogo">Pause Game</span>
+          <span class="tecla-kbd">P</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÕES OPERACIONAIS -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button type="button" class="btn-acao btn-iniciar" id="btn-iniciar">
+        <span>⚡</span> <span data-en="START MISSION" data-pt="INICIAR MISSÃO">START MISSION</span>
+      </button>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-acao btn-secundario" id="btn-pausar" style="flex:1;">
+          <span data-en="⏸ PAUSE" data-pt="⏸ PAUSAR">⏸ PAUSE</span>
+        </button>
+        <button type="button" class="btn-acao btn-secundario" id="btn-audio" style="flex:1;">
+          <span data-en="🔊 SOUND" data-pt="🔊 SOM">🔊 SOUND</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ARENA CENTRAL MAXIMIZADA -->
+  <main id="arena-container">
+    <div class="gabinete-topo">
+      <div class="gabinete-titulo">
+        <span>🚀</span>
+        <span data-en="DEFENDER — PLANETARY DEFENSE FORCE (1980)" data-pt="DEFENDER — FORÇA DE DEFESA PLANETÁRIA (1980)">DEFENDER — PLANETARY DEFENSE FORCE (1980)</span>
+      </div>
+      <button type="button" class="btn-topo-toggle" id="btn-toggle-paineis" data-en="🗖 MAXIMIZE VIEW" data-pt="🗖 MAXIMIZAR TELA">
+        🗖 MAXIMIZE VIEW
+      </button>
+    </div>
+
+    <div class="viewport-gabinete" id="viewport-gabinete">
+      <div id="arena-frame">
+        <canvas id="tela" width="800" height="600"></canvas>
+        <div class="crt-overlay"></div>
+        <div class="reflexo-vidro"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PAINEL DIREITO: BESTIÁRIO ALIEN, REGRAS E RECORDES -->
+  <aside class="painel-lateral" id="painel-dir">
+    <!-- BESTIÁRIO DE INIMIGOS -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="ALIEN THREAT INTEL" data-pt="AMEAÇAS ALIENÍGENAS">ALIEN THREAT INTEL</span>
+        <span style="color:#ef4444;">DATABASE</span>
+      </div>
+      <div class="tabela-itens">
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-lander">🛸</span>
+            <span data-en="Lander (Abductor)" data-pt="Lander (Raptor)">Lander (Abductor)</span>
+          </div>
+          <div class="valor-item" style="color:#4ade80;">150 PTS</div>
+        </div>
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-mutant">👾</span>
+            <span data-en="Mutant (Hyper-Aggressive)" data-pt="Mutante (Agressivo)">Mutant (Hyper-Aggressive)</span>
+          </div>
+          <div class="valor-item" style="color:#f87171;">150 PTS</div>
+        </div>
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-bomber">💣</span>
+            <span data-en="Bomber (Mine Layer)" data-pt="Bomber (Minas)">Bomber (Mine Layer)</span>
+          </div>
+          <div class="valor-item" style="color:#60a5fa;">250 PTS</div>
+        </div>
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-pod">🟡</span>
+            <span data-en="Pod (Spawns Swarmers)" data-pt="Pod (Casulo)">Pod (Spawns Swarmers)</span>
+          </div>
+          <div class="valor-item" style="color:#fbbf24;">1000 PTS</div>
+        </div>
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-baiter">⚡</span>
+            <span data-en="Baiter (Interceptor)" data-pt="Baiter (Interceptador)">Baiter (Interceptor)</span>
+          </div>
+          <div class="valor-item" style="color:#c084fc;">200 PTS</div>
+        </div>
+        <div class="linha-item">
+          <div class="rotulo-item">
+            <span class="icone-tag tag-human">🏃</span>
+            <span data-en="Humanoid Rescue Catch" data-pt="Resgate de Humanoide">Humanoid Rescue Catch</span>
+          </div>
+          <div class="valor-item" style="color:#38bdf8;">1000 PTS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TÁTICAS DE MISSÃO -->
+    <div class="card-arcade">
+      <div class="card-titulo" data-en="TACTICAL PROTOCOLS" data-pt="PROTOCOLOS TÁTICOS">TACTICAL PROTOCOLS</div>
+      <div style="font-size:11px; line-height:1.6; color:#94a3b8; display:flex; flex-direction:column; gap:8px;">
+        <p data-en="1. <b>Long-Range Scanner:</b> The radar at the top tracks the 360&deg; planetary orbit. White dots indicate humanoids on ground."
+           data-pt="1. <b>Scanner de Longo Alcance:</b> O radar no topo monitora os 360&deg; do planeta. Pontos brancos indicam humanóides.">
+          1. <b>Long-Range Scanner:</b> The radar at the top tracks the 360&deg; planetary orbit. White dots indicate humanoids on ground.
+        </p>
+        <p data-en="2. <b>Human Rescue:</b> Shoot Landers abducting humans. Catch the falling human in mid-air and touch down gently on ground for <b>1000 bonus points</b>."
+           data-pt="2. <b>Resgate Humano:</b> Abata Landers que raptarem humanos. Apanhe o humano caindo no ar e pouse no chão para <b>1000 pontos</b>.">
+          2. <b>Human Rescue:</b> Shoot Landers abducting humans. Catch the falling human in mid-air and touch down gently on ground for <b>1000 bonus points</b>.
+        </p>
+        <p data-en="3. <b>Planet Destruction:</b> If all humans are abducted or die, the planet explodes and all remaining aliens turn into frenzied Mutants!"
+           data-pt="3. <b>Destruição do Planeta:</b> Se todos humanos morrerem, o planeta explode e todo alienígena restante vira Mutante furioso!">
+          3. <b>Planet Destruction:</b> If all humans are abducted or die, the planet explodes and all remaining aliens turn into frenzied Mutants!
+        </p>
+      </div>
+    </div>
+
+    <!-- RECORDES ARCADE -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="HALL OF FAME" data-pt="RECORDES DA SALA">HALL OF FAME</span>
+        <span style="color:#facc15;">TOP SCORES</span>
+      </div>
+      <div class="tabela-itens">
+        <div class="linha-item">
+          <span style="color:#facc15; font-weight:800;">1. ACE-DEF</span>
+          <span style="font-weight:900; color:#ef4444;" id="hall-top">095400</span>
+        </div>
+        <div class="linha-item">
+          <span style="color:#cbd5e1; font-weight:700;">2. PILOT-X</span>
+          <span style="font-weight:700; color:#cbd5e1;">068200</span>
+        </div>
+        <div class="linha-item">
+          <span style="color:#94a3b8; font-weight:700;">3. NOVA</span>
+          <span style="font-weight:700; color:#94a3b8;">042100</span>
+        </div>
+        <div class="linha-item" style="border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.1);">
+          <span style="color:#ef4444; font-weight:900;" data-en="YOU" data-pt="VOCÊ">YOU</span>
+          <span style="font-weight:900; color:#ffffff;" id="hall-player">000000</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="roteador.js"></script>
+<script src="defender.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById("tela");
+  const layout = document.getElementById("arcade-layout");
+  const arenaFrame = document.getElementById("arena-frame");
+  const viewport = document.getElementById("viewport-gabinete");
+  const btnTogglePaineis = document.getElementById("btn-toggle-paineis");
+
+  const hudScore = document.getElementById("hud-score");
+  const hudWave = document.getElementById("hud-wave");
+  const hudLives = document.getElementById("hud-lives");
+  const hudBombs = document.getElementById("hud-bombs");
+  const hudHumans = document.getElementById("hud-humans");
+  const hallPlayer = document.getElementById("hall-player");
+  const hallTop = document.getElementById("hall-top");
+
+  const btnIniciar = document.getElementById("btn-iniciar");
+  const btnPausar = document.getElementById("btn-pausar");
+  const btnAudio = document.getElementById("btn-audio");
+
+  function redimensionarArena() {
+    if (!viewport || !arenaFrame) return;
+    const rect = viewport.getBoundingClientRect();
+    const pad = 12;
+    const maxW = Math.max(100, rect.width - pad);
+    const maxH = Math.max(100, rect.height - pad);
+    const proporcao = 800 / 600; // 1.3333
+
+    let h = maxH;
+    let w = h * proporcao;
+
+    if (w > maxW) {
+      w = maxW;
+      h = w / proporcao;
+    }
+
+    arenaFrame.style.width = Math.floor(w) + "px";
+    arenaFrame.style.height = Math.floor(h) + "px";
+  }
+
+  window.addEventListener("resize", redimensionarArena);
+  setTimeout(redimensionarArena, 30);
+  setTimeout(redimensionarArena, 200);
+
+  btnTogglePaineis.addEventListener("click", function () {
+    layout.classList.toggle("max-view");
+    const isMax = layout.classList.contains("max-view");
+    const isPt = (typeof window !== "undefined" && window.obterIdioma && window.obterIdioma() === "pt");
+    btnTogglePaineis.textContent = isMax ? (isPt ? "🗗 RESTAURAR PAINÉIS" : "🗗 RESTORE PANELS") : (isPt ? "🗖 MAXIMIZAR TELA" : "🗖 MAXIMIZE VIEW");
+    setTimeout(redimensionarArena, 260);
+    redimensionarArena();
+  });
+
+  const game = new Defender.DefenderGame(canvas, {
+    onHudUpdate: function (info) {
+      const isPt = (typeof window !== "undefined" && window.obterIdioma && window.obterIdioma() === "pt");
+      if (hudScore) hudScore.textContent = String(info.score).padStart(6, "0");
+      if (hudWave) hudWave.textContent = String(info.wave);
+      if (hudLives) hudLives.textContent = String(info.lives);
+      if (hudBombs) hudBombs.textContent = String(info.smartBombs);
+      if (hudHumans) hudHumans.textContent = String(info.humanoids);
+      if (hallPlayer) hallPlayer.textContent = String(info.score).padStart(6, "0");
+      if (hallTop && info.highScore > 95400) {
+        hallTop.textContent = String(info.highScore).padStart(6, "0");
+      }
+
+      if (btnPausar) {
+        btnPausar.textContent = info.state === "paused" ? (isPt ? "▶ CONTINUAR" : "▶ RESUME") : (isPt ? "⏸ PAUSAR" : "⏸ PAUSE");
+      }
+      if (btnAudio) {
+        btnAudio.textContent = info.sound ? (isPt ? "🔊 SOM: ATIVADO" : "🔊 SOUND: ON") : (isPt ? "🔇 SOM: MUDO" : "🔇 SOUND: MUTED");
+      }
+    }
+  });
+
+  btnIniciar.addEventListener("click", () => {
+    game.startNewGame();
+    canvas.focus();
+  });
+  btnPausar.addEventListener("click", () => game.togglePause());
+  btnAudio.addEventListener("click", () => game.toggleSound());
+
+  canvas.addEventListener("click", () => {
+    if (game.state === "start" || game.state === "gameover") {
+      game.startNewGame();
+    }
+  });
+
+  game.startLoop();
+})();
+</script>
+</body>
+</html>

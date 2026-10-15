@@ -29,7 +29,8 @@
 </style>
 </head>
 <body>
-<a href="index.html" style="position:fixed;top:10px;left:14px;z-index:50;color:#55FF55;font:13px monospace;text-decoration:none;opacity:.6">&#8592; JOGOS</a>
+<a href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS" style="position:fixed;top:10px;left:14px;z-index:50;color:#55FF55;font:13px monospace;text-decoration:none;opacity:.65">&larr; GAMES</a>
+<button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="position:fixed;top:10px;right:14px;z-index:50;background:transparent;border:1px solid #55FF55;color:#55FF55;padding:2px 8px;font:12px monospace;cursor:pointer;opacity:0.75;">🇺🇸 EN &middot; PT</button>
 <canvas id="cga" width="480" height="270"></canvas>
 
 <script src="roteador.js"></script>
@@ -358,45 +359,47 @@ function drawSnake() {
 
 function drawHud() {
   var p = P();
+  var isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
   // faixa superior (fora da área jogável): placar
   drawText('SCORE ' + pad(score, 3), 4, 5, p.bright, 1);
   drawText('HI ' + pad(hi, 3), W - textWidth('HI ' + pad(hi, 3), 1) - 4, 5, p.dim, 1);
   // faixa inferior
   drawText(P().name, 4, H - 10, p.dim, 1);
-  var right = 'F FULLSCREEN  M SOM  ' + String(palIndex + 1) + '/3';
+  var right = (isPt ? 'F TELA CHEIA  M SOM  ' : 'F FULLSCREEN  M AUDIO  ') + String(palIndex + 1) + '/3';
   drawText(right, W - textWidth(right, 1) - 4, H - 10, p.dim, 1);
 }
 
 function drawOverlay() {
   var p = P();
   var top = Y0 * CELL, height = (Y1 - Y0 + 1) * CELL;
+  var isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
 
   if (state === STATE_READY) {
     ctx.fillStyle = p.bg;
     ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
-    drawTextCentered('NOKIA\nMINHOQUINHA', top + 30, p.bright, 2);
+    drawTextCentered(isPt ? 'NOKIA\nMINHOQUINHA' : 'NOKIA\nSNAKE CGA', top + 30, p.bright, 2);
     drawTextCentered('CGA 480X270 - FULL HD 1920X1080', top + 70, p.dim, 1);
-    drawTextCentered('SETAS OU WASD PARA JOGAR', top + 92, p.alt, 1);
-    drawTextCentered('P PAUSA   F TELA CHEIA   M SOM', top + 104, p.dim, 1);
-    drawTextCentered('1 2 3 TROCAM A PALETA CGA', top + 116, p.dim, 1);
+    drawTextCentered(isPt ? 'SETAS OU WASD PARA JOGAR' : 'ARROW KEYS OR WASD TO PLAY', top + 92, p.alt, 1);
+    drawTextCentered(isPt ? 'P PAUSA   F TELA CHEIA   M SOM' : 'P PAUSE   F FULLSCREEN   M AUDIO', top + 104, p.dim, 1);
+    drawTextCentered(isPt ? '1 2 3 TROCAM A PALETA CGA' : '1 2 3 CHANGE CGA PALETTE', top + 116, p.dim, 1);
   } else if (state === STATE_PAUSE) {
     ctx.fillStyle = p.bg;
     ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
-    drawTextCentered('PAUSA', top + 50, p.bright, 3);
-    drawTextCentered('PRESSIONE P PARA CONTINUAR', top + 96, p.alt, 1);
+    drawTextCentered(isPt ? 'PAUSA' : 'PAUSED', top + 50, p.bright, 3);
+    drawTextCentered(isPt ? 'PRESSIONE P PARA CONTINUAR' : 'PRESS P TO RESUME', top + 96, p.alt, 1);
   } else if (state === STATE_OVER) {
     ctx.fillStyle = p.bg;
     ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
     drawTextCentered('GAME OVER', top + 40, p.food, 3);
-    drawTextCentered('PONTOS ' + pad(score, 3), top + 82, p.bright, 1);
-    drawTextCentered('RECORDE ' + pad(hi, 3), top + 94, p.dim, 1);
-    drawTextCentered('ESPACO OU ENTER PARA JOGAR DE NOVO', top + 112, p.alt, 1);
+    drawTextCentered((isPt ? 'PONTOS ' : 'SCORE ') + pad(score, 3), top + 82, p.bright, 1);
+    drawTextCentered((isPt ? 'RECORDE ' : 'HI-SCORE ') + pad(hi, 3), top + 94, p.dim, 1);
+    drawTextCentered(isPt ? 'ESPACO OU ENTER PARA JOGAR DE NOVO' : 'SPACE OR ENTER TO PLAY AGAIN', top + 112, p.alt, 1);
   } else if (state === STATE_WIN) {
     ctx.fillStyle = p.bg;
     ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
-    drawTextCentered('VOCE VENCEU', top + 40, p.bright, 3);
-    drawTextCentered('A TELA TODA E SUA', top + 82, p.alt, 1);
-    drawTextCentered('ESPACO PARA JOGAR DE NOVO', top + 100, p.dim, 1);
+    drawTextCentered(isPt ? 'VOCE VENCEU' : 'YOU WIN', top + 40, p.bright, 3);
+    drawTextCentered(isPt ? 'A TELA TODA E SUA' : 'ALL TILES CONQUERED', top + 82, p.alt, 1);
+    drawTextCentered(isPt ? 'ESPACO PARA JOGAR DE NOVO' : 'SPACE TO PLAY AGAIN', top + 100, p.dim, 1);
   }
 }
 

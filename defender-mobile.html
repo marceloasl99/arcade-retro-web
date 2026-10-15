@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#020617">
+<title>DEFENDER — Arcade Mobile</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#020617; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0;
+  }
+
+  #app-mobile {
+    width:100%; max-width:480px; height:100dvh; height:100%;
+    margin:0 auto; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: radial-gradient(circle at 50% 30%, #0c1527 0%, #020617 100%);
+    overflow:hidden; position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.95);
+  }
+
+  /* ------------------- CABEÇALHO SUPERIOR ------------------- */
+  #header-mobile {
+    flex:0 0 auto; height:46px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 8px; width:100%;
+    background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(239,68,68,0.25);
+    z-index:20;
+  }
+  #voltar-link {
+    color:#ef4444; text-decoration:none; font-size:10px; font-weight:800;
+    letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
+    flex-shrink:0;
+  }
+  .info-bar { display:flex; gap:8px; font-size:10px; align-items:center; }
+  .info-item { display:flex; flex-direction:column; align-items:center; }
+  .info-rotulo { font-size:7px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase; }
+  .info-val { font-weight:900; color:#ef4444; font-size:11px; }
+
+  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .btn-topo {
+    background:#1e293b; border:1px solid #475569; border-radius:6px;
+    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:32px; height:30px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-topo:active { background:#ef4444; color:#ffffff; }
+
+  /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
+  #palco {
+    flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; padding:4px;
+  }
+  #arena-frame-mobile {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 24px rgba(0,0,0,0.85), 0 0 0 1px rgba(239,68,68,0.3);
+    border-radius:8px; overflow:hidden; background:#000;
+  }
+  #tela {
+    display:block; width:100%; height:100%;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+
+  /* ------------------- PAINEL DE CONTROLES TOUCH ------------------- */
+  #controles-deck {
+    flex:0 0 auto; padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:rgba(15,23,42,0.96); border-top:1px solid rgba(239,68,68,0.25);
+    z-index:20;
+  }
+
+  /* LADO ESQUERDO: SUBIR, DESCER E REVERTER */
+  .controles-voo {
+    display:flex; flex-direction:column; gap:6px; width:130px; flex-shrink:0;
+  }
+  .linha-botoes { display:flex; gap:6px; }
+
+  .btn-ctrl {
+    height:46px; background:linear-gradient(180deg, #1e293b, #0f172a);
+    border:2px solid rgba(239,68,68,0.35); border-radius:10px; color:#ef4444;
+    font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 0 #05070f; cursor:pointer; touch-action:none; font-family:inherit;
+  }
+  .btn-ctrl:active, .btn-ctrl.pressed {
+    background:#dc2626; color:#ffffff; transform:translateY(2px);
+    box-shadow:0 1px 0 #05070f; border-color:#f87171;
+  }
+
+  /* LADO DIREITO: DISPARAR, THRUST, SMART BOMB, HYPER */
+  .controles-armas {
+    display:flex; flex-direction:column; gap:6px; flex:1; max-width:260px;
+  }
+
+  .btn-fire {
+    flex:1; height:46px; background:linear-gradient(180deg, #ef4444, #991b1b);
+    border:2px solid #f87171; color:#fff; font-size:14px; font-weight:900;
+  }
+  .btn-fire:active, .btn-fire.pressed {
+    background:#b91c1c; transform:translateY(2px);
+  }
+
+  .btn-thrust {
+    flex:1; height:46px; background:linear-gradient(180deg, #0284c7, #0369a1);
+    border:2px solid #38bdf8; color:#fff; font-size:13px; font-weight:900;
+  }
+  .btn-thrust:active, .btn-thrust.pressed {
+    background:#075985; transform:translateY(2px);
+  }
+
+  .btn-smart {
+    flex:1; height:38px; background:#eab308; border:2px solid #facc15;
+    color:#000; font-size:11px; font-weight:900; border-radius:8px;
+  }
+  .btn-smart:active, .btn-smart.pressed {
+    background:#ca8a04; color:#fff; transform:translateY(2px);
+  }
+
+  .btn-hyper {
+    flex:1; height:38px; background:#9333ea; border:2px solid #c084fc;
+    color:#fff; font-size:11px; font-weight:900; border-radius:8px;
+  }
+  .btn-hyper:active, .btn-hyper.pressed {
+    background:#7e22ce; transform:translateY(2px);
+  }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+  <!-- CABEÇALHO SUPERIOR -->
+  <header id="header-mobile">
+    <a href="index.html" id="voltar-link">
+      <span>&larr;</span>
+      <span data-en="MENU" data-pt="MENU">MENU</span>
+    </a>
+
+    <div class="info-bar">
+      <div class="info-item">
+        <span class="info-rotulo" data-en="SCORE" data-pt="PTS">SCORE</span>
+        <span class="info-val" id="hud-score">000000</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="WAVE" data-pt="ONDA">WAVE</span>
+        <span class="info-val" id="hud-wave" style="color:#facc15;">1</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="SHIPS" data-pt="VIDAS">SHIPS</span>
+        <span class="info-val" id="hud-lives">3</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="BOMBS" data-pt="BOMBAS">BOMBS</span>
+        <span class="info-val" id="hud-bombs" style="color:#eab308;">3</span>
+      </div>
+    </div>
+
+    <div class="acoes-topo">
+      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
+      <button type="button" class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" title="Language">🇺🇸</button>
+      <button type="button" class="btn-topo" id="btn-pausa" title="Pausa">⏸</button>
+    </div>
+  </header>
+
+  <!-- PALCO DO JOGO -->
+  <main id="palco">
+    <div id="arena-frame-mobile">
+      <canvas id="tela" width="800" height="600"></canvas>
+    </div>
+  </main>
+
+  <!-- DECK DE CONTROLES TOUCH ERGONÔMICOS -->
+  <footer id="controles-deck">
+    <!-- VOO: SUBIR, DESCER E REVERSÃO -->
+    <div class="controles-voo">
+      <button type="button" class="btn-ctrl" id="btn-up" style="width:100%;">&uarr; CLIMB</button>
+      <div class="linha-botoes">
+        <button type="button" class="btn-ctrl" id="btn-down" style="flex:1;">&darr;</button>
+        <button type="button" class="btn-ctrl" id="btn-rev" style="flex:1; font-size:11px;">REV &#8646;</button>
+      </div>
+    </div>
+
+    <!-- ARMAS E PROPULSÃO -->
+    <div class="controles-armas">
+      <div class="linha-botoes">
+        <button type="button" class="btn-ctrl btn-thrust" id="btn-thrust">THRUST &raquo;</button>
+        <button type="button" class="btn-ctrl btn-fire" id="btn-fire">FIRE 💥</button>
+      </div>
+      <div class="linha-botoes">
+        <button type="button" class="btn-ctrl btn-smart" id="btn-bomb">BOMB 💣</button>
+        <button type="button" class="btn-ctrl btn-hyper" id="btn-hyper">HYPER 🌌</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script src="roteador.js"></script>
+<script src="defender.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById("tela");
+  const palco = document.getElementById("palco");
+  const arenaFrame = document.getElementById("arena-frame-mobile");
+
+  const hudScore = document.getElementById("hud-score");
+  const hudWave = document.getElementById("hud-wave");
+  const hudLives = document.getElementById("hud-lives");
+  const hudBombs = document.getElementById("hud-bombs");
+
+  const btnPausa = document.getElementById("btn-pausa");
+  const btnSom = document.getElementById("btn-som");
+
+  function redimensionarArenaMobile() {
+    if (!palco || !arenaFrame) return;
+    const wMax = palco.clientWidth - 8;
+    const hMax = palco.clientHeight - 8;
+    const proporcao = 800 / 600;
+
+    let w = wMax;
+    let h = w / proporcao;
+
+    if (h > hMax) {
+      h = hMax;
+      w = h * proporcao;
+    }
+
+    arenaFrame.style.width = Math.floor(w) + "px";
+    arenaFrame.style.height = Math.floor(h) + "px";
+  }
+
+  window.addEventListener("resize", redimensionarArenaMobile);
+  window.addEventListener("orientationchange", redimensionarArenaMobile);
+  setTimeout(redimensionarArenaMobile, 40);
+  setTimeout(redimensionarArenaMobile, 200);
+
+  const game = new Defender.DefenderGame(canvas, {
+    onHudUpdate: function (info) {
+      if (hudScore) hudScore.textContent = String(info.score).padStart(6, "0");
+      if (hudWave) hudWave.textContent = String(info.wave);
+      if (hudLives) hudLives.textContent = String(info.lives);
+      if (hudBombs) hudBombs.textContent = String(info.smartBombs);
+
+      if (btnPausa) btnPausa.textContent = info.state === "paused" ? "▶" : "⏸";
+      if (btnSom) btnSom.textContent = info.sound ? "🔊" : "🔇";
+    }
+  });
+
+  function ligarBotao(id, aoPressionar, aoSoltar) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const iniciar = (e) => {
+      e.preventDefault();
+      el.classList.add("pressed");
+      if (aoPressionar) aoPressionar();
+    };
+    const terminar = (e) => {
+      e.preventDefault();
+      el.classList.remove("pressed");
+      if (aoSoltar) aoSoltar();
+    };
+    el.addEventListener("pointerdown", iniciar);
+    el.addEventListener("pointerup", terminar);
+    el.addEventListener("pointercancel", terminar);
+    el.addEventListener("pointerleave", terminar);
+  }
+
+  ligarBotao("btn-up", () => game.teclas.cima = true, () => game.teclas.cima = false);
+  ligarBotao("btn-down", () => game.teclas.baixo = true, () => game.teclas.baixo = false);
+  ligarBotao("btn-rev", () => game.teclas.reverso = true, () => {});
+  ligarBotao("btn-thrust", () => game.teclas.thrust = true, () => game.teclas.thrust = false);
+  ligarBotao("btn-fire", () => game.teclas.disparo = true, () => game.teclas.disparo = false);
+  ligarBotao("btn-bomb", () => game.teclas.smartBomb = true, () => {});
+  ligarBotao("btn-hyper", () => game.teclas.hiperespaco = true, () => {});
+
+  btnPausa.addEventListener("click", () => game.togglePause());
+  btnSom.addEventListener("click", () => game.toggleSound());
+
+  canvas.addEventListener("click", () => {
+    if (game.state === "start" || game.state === "gameover") {
+      game.startNewGame();
+    }
+  });
+
+  game.startLoop();
+})();
+</script>
+</body>
+</html>

@@ -1874,8 +1874,8 @@
         // Kickback na outlane esquerda (recurso classico de mesas Williams/Bally)
         if (kickbackAtivo && b.x >= 0.7 && b.x <= 2.8 && b.y <= 4.5 && b.y >= 1.8 && b.vy < 0) {
           kickbackAtivo = false;
-          b.vx = 22 + (Math.random() - 0.5) * 6;
-          b.vy = 135;
+          b.vx = 18;
+          b.vy = 155;
           som_('lancar');
           mensagem = 'KICKBACK SALVOU!';
           mensagemTempo = 2.2;

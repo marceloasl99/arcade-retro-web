@@ -77,7 +77,69 @@
     }
   }
 
+  /* ------------------------- sistema de idioma ------------------------- */
+  function obterIdioma() {
+    var busca = lerBusca();
+    var m = /[?&]lang=(en|pt)(?:&|$)/i.exec(busca);
+    if (m) return m[1].toLowerCase();
+    try {
+      var salvo = raiz.localStorage && raiz.localStorage.getItem('arcade_lang');
+      if (salvo === 'en' || salvo === 'pt') return salvo;
+    } catch (e) {}
+    return 'en'; // Inglês como padrão
+  }
+
+  function definirIdioma(lang) {
+    if (lang !== 'en' && lang !== 'pt') lang = 'en';
+    try {
+      if (raiz.localStorage) raiz.localStorage.setItem('arcade_lang', lang);
+    } catch (e) {}
+    aplicarIdiomaNoDOM(lang);
+    return lang;
+  }
+
+  function alternarIdioma() {
+    var atual = obterIdioma();
+    var novo = (atual === 'en' ? 'pt' : 'en');
+    definirIdioma(novo);
+    return novo;
+  }
+
+  function aplicarIdiomaNoDOM(lang) {
+    if (!lang) lang = obterIdioma();
+    try {
+      if (raiz.document) {
+        raiz.document.documentElement.lang = (lang === 'en' ? 'en' : 'pt-BR');
+        var elementos = raiz.document.querySelectorAll('[data-en]');
+        for (var i = 0; i < elementos.length; i++) {
+          var el = elementos[i];
+          var txt = el.getAttribute('data-' + lang);
+          if (txt !== null) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = txt;
+            else el.innerHTML = txt;
+          }
+        }
+        var btns = raiz.document.querySelectorAll('.btn-lang-toggle');
+        for (var j = 0; j < btns.length; j++) {
+          btns[j].innerHTML = (lang === 'en' ? '🇺🇸 EN &middot; PT' : '🇧🇷 PT &middot; EN');
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (typeof raiz.document !== 'undefined') {
+    if (raiz.document.readyState === 'loading') {
+      raiz.document.addEventListener('DOMContentLoaded', function () { aplicarIdiomaNoDOM(); });
+    } else {
+      aplicarIdiomaNoDOM();
+    }
+  }
+
   raiz.detectarMobile = detectarMobile;
   raiz.forcaDesktop = forcaDesktop;
   raiz.forcaMobile = forcaMobile;
+  raiz.obterIdioma = obterIdioma;
+  raiz.definirIdioma = definirIdioma;
+  raiz.alternarIdioma = alternarIdioma;
+  raiz.aplicarIdiomaNoDOM = aplicarIdiomaNoDOM;
 })(typeof window !== "undefined" ? window : this);

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#030612">
+<title>SPACE CADET 3D PINBALL — Arcade Retrô</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#03050c; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e0edff; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ---------------------- ESTRUTURA GERAL ARCADE ---------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0c152e 0%, #03050c 100%);
+  }
+
+  /* Painéis laterais retro com transição suave */
+  .painel-lateral {
+    width: clamp(220px, 16vw, 270px); flex-shrink: 0; height: 100%; display: flex; flex-direction: column;
+    gap: 12px; padding: 12px 14px; background: rgba(6,10,22,0.94);
+    border-right: 1px solid rgba(0,210,255,0.22);
+    backdrop-filter: blur(8px); z-index: 10; overflow-y: auto;
+    transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+  }
+  #painel-dir {
+    border-right: none; border-left: 1px solid rgba(0,210,255,0.22);
+  }
+  .painel-lateral.oculto {
+    width: 0 !important; min-width: 0 !important; max-width: 0 !important;
+    padding: 0 !important; margin: 0 !important; border: none !important;
+    opacity: 0 !important; pointer-events: none !important; overflow: hidden !important;
+  }
+
+  .btn-topo-toggle {
+    padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.1em; cursor: pointer; color: #bae6fd;
+    background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.35);
+    transition: all 0.15s;
+  }
+  .btn-topo-toggle:hover {
+    background: rgba(56,189,248,0.3); border-color: #38bdf8; color: #fff;
+  }
+
+  /* Botão voltar */
+  .btn-voltar {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 14px; border-radius:8px; text-decoration:none;
+    background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.3);
+    color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:0.12em;
+    transition:all 0.15s;
+  }
+  .btn-voltar:hover {
+    background:rgba(0,210,255,0.2); border-color:#38bdf8;
+    box-shadow:0 0 16px rgba(56,189,248,0.4); transform:translateX(-2px);
+  }
+
+  /* Container central da mesa */
+  #mesa-container {
+    flex: 1; height: 100vh; position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; overflow: hidden; padding: 2px 4px;
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.9);
+  }
+
+  /* Marquee superior do gabinete compacto */
+  .gabinete-topo {
+    flex-shrink: 0; width: 100%; max-width: none; padding: 4px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(180deg, rgba(16,28,60,0.9) 0%, rgba(6,12,28,0.95) 100%);
+    border: 1px solid rgba(0,210,255,0.3); border-bottom: none; border-radius: 8px 8px 0 0;
+    box-shadow: 0 -4px 15px rgba(0,210,255,0.12);
+  }
+  .gabinete-titulo {
+    font-size: 12px; font-weight: 900; letter-spacing: 0.22em; color: #38bdf8;
+    text-shadow: 0 0 10px rgba(56,189,248,0.7); display: flex; align-items: center; gap: 6px;
+  }
+  .gabinete-sub {
+    font-size: 9px; letter-spacing: 0.12em; color: #818cf8; font-weight: 700;
+  }
+
+  /* Moldura e tela do jogo ocupando a altura vertical total */
+  .viewport-gabinete {
+    position: relative; width: 100%; max-width: none; flex: 1; height: calc(100% - 30px);
+    background: #000; border: 2px solid rgba(0,210,255,0.4); border-radius: 0 0 8px 8px;
+    box-shadow: 0 0 30px rgba(0,180,255,0.22), inset 0 0 40px rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+
+  /* Efeito de iluminação e melhoria gráfica da mesa */
+  #canvas {
+    display: block;
+    filter: contrast(1.1) saturate(1.18) brightness(1.05);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transition: filter 0.15s;
+    box-shadow: 0 0 25px rgba(0,0,0,0.9);
+  }
+  .viewport-gabinete.impacto #canvas {
+    filter:contrast(1.25) saturate(1.3) brightness(1.2);
+  }
+
+  /* Linhas CRT opcionais */
+  .crt-overlay {
+    position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+               linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size:100% 3px, 6px 100%;
+    opacity:0.6;
+  }
+
+  /* Reflexo de vidro da mesa */
+  .reflexo-vidro {
+    position:absolute; inset:0; pointer-events:none; z-index:6;
+    background:linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 35%, transparent 60%);
+  }
+
+  /* Luzes pulsantes no gabinete */
+  .luz-neon {
+    position:absolute; width:100%; height:100%; pointer-events:none; z-index:4;
+    box-shadow:inset 0 0 40px rgba(56,189,248,0.2);
+    transition:box-shadow 0.2s;
+  }
+  .luz-neon.ativo {
+    box-shadow:inset 0 0 60px rgba(236,72,153,0.5), inset 0 0 100px rgba(56,189,248,0.4);
+  }
+
+  /* Overlay de início do jogo */
+  #overlay-inicio {
+    position:absolute; inset:0; z-index:20; background:rgba(3,6,18,0.92);
+    backdrop-filter:blur(6px); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:20px; text-align:center; padding:24px;
+  }
+  .badge-destaque {
+    font-size:11px; letter-spacing:0.25em; color:#38bdf8; font-weight:800;
+    padding:6px 14px; border-radius:20px; background:rgba(56,189,248,0.15);
+    border:1px solid rgba(56,189,248,0.4);
+  }
+  .titulo-overlay {
+    font-size:32px; font-weight:900; letter-spacing:0.18em; color:#fff;
+    text-shadow:0 0 20px rgba(56,189,248,0.8), 0 0 40px rgba(129,140,248,0.5);
+  }
+  .btn-jogar {
+    padding:16px 36px; border-radius:12px; font-size:16px; font-weight:900;
+    letter-spacing:0.2em; text-transform:uppercase; cursor:pointer;
+    background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+    border:2px solid #7dd3fc; color:#041426;
+    box-shadow:0 0 25px rgba(56,189,248,0.6);
+    transition:all 0.15s;
+  }
+  .btn-jogar:hover {
+    transform:scale(1.06); box-shadow:0 0 40px rgba(56,189,248,0.9);
+  }
+
+  /* Carregando / Spinner */
+  #spinner-carregando {
+    display:none; flex-direction:column; align-items:center; gap:12px;
+  }
+  .spinner-roda {
+    width:42px; height:42px; border:4px solid rgba(56,189,248,0.2);
+    border-top-color:#38bdf8; border-radius:50%; animation:girar 0.8s linear infinite;
+  }
+  @keyframes girar { to { transform:rotate(360deg); } }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(14,22,44,0.8) 0%, rgba(8,14,30,0.92) 100%);
+    border:1px solid rgba(56,189,248,0.25); border-radius:12px;
+    padding:14px 14px; box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  }
+  .card-arcade h3 {
+    font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    color:#38bdf8; margin-bottom:10px; display:flex; align-items:center;
+    justify-content:space-between;
+  }
+  .badge {
+    font-size:9px; padding:2px 6px; border-radius:4px;
+    background:rgba(56,189,248,0.2); color:#bae6fd;
+  }
+
+  /* Lista de componentes e pontuação */
+  .alvo-lista {
+    display:flex; flex-direction:column; gap:8px; font-size:11px;
+  }
+  .alvo-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 8px; border-radius:6px; background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .alvo-item:hover {
+    background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.25);
+  }
+  .alvo-nome { color:#e2e8f0; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .alvo-pts { color:#fbbf24; font-weight:800; }
+
+  /* Patentes Espaciais */
+  .patente-lista {
+    display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px;
+  }
+  .patente-item {
+    padding:6px 8px; border-radius:6px; background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.07); text-align:center;
+  }
+  .patente-item.ativa {
+    background:rgba(56,189,248,0.2); border-color:#38bdf8; color:#38bdf8;
+    font-weight:800; box-shadow:0 0 10px rgba(56,189,248,0.3);
+  }
+
+  /* Teclas de atalho */
+  .tecla-grid {
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .tecla-linha {
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:11px; color:#cbd5e1;
+  }
+  .chip-tecla {
+    padding:3px 7px; border-radius:5px; font-size:10px; font-weight:800;
+    background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.35);
+    color:#7dd3fc;
+  }
+
+  /* Botões de Ação Direta */
+  .acoes-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;
+  }
+  .btn-acao {
+    padding:9px 10px; border-radius:8px; font-size:11px; font-weight:800;
+    letter-spacing:0.1em; cursor:pointer; text-align:center;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    color:#e2e8f0; transition:all 0.15s;
+  }
+  .btn-acao:hover {
+    background:rgba(56,189,248,0.18); border-color:#38bdf8; color:#38bdf8;
+  }
+  .btn-acao.destaque {
+    grid-column:span 2; background:rgba(236,72,153,0.18);
+    border-color:rgba(236,72,153,0.4); color:#f472b6;
+  }
+  .btn-acao.destaque:hover {
+    background:rgba(236,72,153,0.3); border-color:#ec4899; box-shadow:0 0 16px rgba(236,72,153,0.4);
+  }
+
+  /* Responsividade para telas menores de desktop */
+  @media (max-width: 1180px) {
+    .painel-lateral { width:260px; padding:12px; }
+  }
+  @media (max-width: 900px) {
+    .painel-lateral { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+
+  <!-- ================= PAINEL ESQUERDO: MANUAL E MISSÕES ================= -->
+  <aside class="painel-lateral" id="painel-esq">
+    <a href="index.html" class="btn-voltar" data-en="&larr; BACK TO GAMES" data-pt="&larr; VOLTAR AOS JOGOS">
+      <span>&#8592;</span> BACK TO GAMES
+    </a>
+
+    <!-- Card: Missões e Patentes -->
+    <div class="card-arcade">
+      <h3 data-en="FLEET RANKS <span class='badge'>6 LEVELS</span>" data-pt="PATENTES DA FROTA <span class='badge'>6 NÍVEIS</span>">FLEET RANKS <span class="badge">6 LEVELS</span></h3>
+      <div class="patente-lista">
+        <div class="patente-item ativa" data-en="&#127894; CADET" data-pt="&#127894; CADETE">&#127894; CADET</div>
+        <div class="patente-item" data-en="&#129351; ENSIGN" data-pt="&#129351; ASPIRANTE">&#129351; ENSIGN</div>
+        <div class="patente-item" data-en="&#9876; LIEUTENANT" data-pt="&#9876; TENENTE">&#9876; LIEUTENANT</div>
+        <div class="patente-item" data-en="&#11088; COMMANDER" data-pt="&#11088; COMANDANTE">&#11088; COMMANDER</div>
+        <div class="patente-item" data-en="&#128081; CAPTAIN" data-pt="&#128081; CAPITÃO">&#128081; CAPTAIN</div>
+        <div class="patente-item" data-en="&#128640; ADMIRAL" data-pt="&#128640; ALMIRANTE">&#128640; ADMIRAL</div>
+      </div>
+    </div>
+
+    <!-- Card: Componentes da Mesa e Pontuação -->
+    <div class="card-arcade">
+      <h3 data-en="COMPONENTS &amp; SCORES <span class='badge'>STELLAR</span>" data-pt="COMPONENTES &amp; PONTOS <span class='badge'>ESTELAR</span>">COMPONENTS &amp; SCORES <span class="badge">STELLAR</span></h3>
+      <div class="alvo-lista">
+        <div class="alvo-item">
+          <span class="alvo-nome" data-en="&#128640; Launch Ramp" data-pt="&#128640; Rampa de Lançamento">&#128640; Launch Ramp</span>
+          <span class="alvo-pts">Skill Shot</span>
+        </div>
+        <div class="alvo-item">
+          <span class="alvo-nome">&#128760; Attack Bumpers (3x)</span>
+          <span class="alvo-pts">500 / 1,500</span>
+        </div>
+        <div class="alvo-item">
+          <span class="alvo-nome" data-en="&#127756; Hyperspace Chute" data-pt="&#127756; Túnel Hyperspace">&#127756; Hyperspace Chute</span>
+          <span class="alvo-pts" data-en="Active Mission" data-pt="Missão Ativa">Active Mission</span>
+        </div>
+        <div class="alvo-item">
+          <span class="alvo-nome" data-en="&#127744; Wormhole" data-pt="&#127744; Buraco de Minhoca">&#127744; Wormhole</span>
+          <span class="alvo-pts" data-en="Teleport" data-pt="Teleporte">Teleport</span>
+        </div>
+        <div class="alvo-item">
+          <span class="alvo-nome" data-en="&#127919; Rank Targets" data-pt="&#127919; Alvos de Patente">&#127919; Rank Targets</span>
+          <span class="alvo-pts" data-en="Promotion" data-pt="Avanço">Promotion</span>
+        </div>
+        <div class="alvo-item">
+          <span class="alvo-nome" data-en="&#128737; Rebound / Kickback" data-pt="&#128737; Rebound / Kickback">&#128737; Rebound / Kickback</span>
+          <span class="alvo-pts" data-en="Ball Saver" data-pt="Salva-Bolas">Ball Saver</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dicas Táticas -->
+    <div class="card-arcade">
+      <h3 data-en="GAMEPLAY STRATEGY" data-pt="ESTRATÉGIA DE JOGO">GAMEPLAY STRATEGY</h3>
+      <p style="font-size:11px; line-height:1.6; color:#94a3b8;" data-en="1. Hit all 3 <b>Bumper</b> lamps to upgrade shield energy levels.<br>2. Enter the <b>Hyperspace Chute</b> to accept science and rescue missions.<br>3. Pull the plunger with precision for an opening <b>Skill Shot</b> bonus!" data-pt="1. Acerte as 3 luzes dos <b>Bumpers</b> para elevar o nível de energia do escudo.<br>2. Entre no <b>Túnel Hyperspace</b> para aceitar missões científicas e de resgate.<br>3. Puxe o lançador com precisão para conseguir o bônus de <b>Skill Shot</b> inicial!">
+        1. Hit all 3 <b>Bumper</b> lamps to upgrade shield energy levels.<br>
+        2. Enter the <b>Hyperspace Chute</b> to accept science and rescue missions.<br>
+        3. Pull the plunger with precision for an opening <b>Skill Shot</b> bonus!
+      </p>
+    </div>
+  </aside>
+
+  <!-- ================= GABINETE CENTRAL: TELA DO JOGO ================= -->
+  <main id="mesa-container">
+    <div class="gabinete-topo">
+      <div class="gabinete-titulo">
+        <span>&#128640;</span> SPACE CADET &middot; 3D PINBALL
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="gabinete-sub">MICROSOFT / CINEMATRONICS 1995</div>
+        <button class="btn-lang-toggle btn-topo-toggle" onclick="alternarIdioma()" type="button" title="Switch Language / Alternar Idioma">🇺🇸 EN &middot; PT</button>
+        <button id="btn-toggle-paineis" class="btn-topo-toggle" title="Toggle Side Panels" data-en="&#9697; MAXIMIZE VIEW" data-pt="&#9697; MAXIMIZAR TELA">&#9697; MAXIMIZE VIEW</button>
+      </div>
+    </div>
+
+    <div class="viewport-gabinete" id="viewport">
+      <!-- Elemento Canvas do SDL2 / WebAssembly -->
+      <canvas id="canvas" width="600" height="440"></canvas>
+
+      <!-- Camadas de acabamento estético visual -->
+      <div class="crt-overlay"></div>
+      <div class="reflexo-vidro"></div>
+      <div class="luz-neon" id="neon-glow"></div>
+
+      <!-- Overlay Inicial de Partida -->
+      <div id="overlay-inicio">
+        <span class="badge-destaque" data-en="LEGENDARY WINDOWS 95 ARCADE" data-pt="LENDÁRIO ARCADE WINDOWS 95">LEGENDARY WINDOWS 95 ARCADE</span>
+        <h1 class="titulo-overlay">SPACE CADET</h1>
+        <p style="max-width:420px; font-size:12px; line-height:1.6; color:#cbd5e1;" data-en="Prepare to command the classic star patrol pinball vessel. Native controls, authentic physics, and rich stereo retro audio." data-pt="Prepare-se para embarcar na clássica nave de patrulha estelar. Controles nativos, física autêntica e áudio estéreo retro em alta fidelidade.">
+          Prepare to command the classic star patrol pinball vessel. Native controls, authentic physics, and rich stereo retro audio.
+        </p>
+
+        <button class="btn-jogar" id="btn-iniciar" data-en="START MISSION &#128640;" data-pt="INICIAR MISSÃO &#128640;">START MISSION &#128640;</button>
+
+        <div id="spinner-carregando">
+          <div class="spinner-roda"></div>
+          <span style="font-size:11px; color:#38bdf8; letter-spacing:0.15em;" data-en="INITIALIZING SHIP SYSTEMS..." data-pt="CARREGANDO SISTEMAS DA NAVE...">INITIALIZING SHIP SYSTEMS...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= PAINEL DIREITO: COMANDOS E AÇÕES ================= -->
+  <aside class="painel-lateral" id="painel-dir">
+    <!-- Card: Controles de Teclado -->
+    <div class="card-arcade">
+      <h3 data-en="KEYBOARD CONTROLS <span class='badge'>NATIVE</span>" data-pt="CONTROLES DO TECLADO <span class='badge'>NATIVO</span>">KEYBOARD CONTROLS <span class="badge">NATIVE</span></h3>
+      <div class="tecla-grid">
+        <div class="tecla-linha">
+          <span data-en="Left Flipper" data-pt="Palheta Esquerda">Left Flipper</span>
+          <span class="chip-tecla" data-en="Z or &larr; or A" data-pt="Z ou &larr; ou A">Z or &larr; or A</span>
+        </div>
+        <div class="tecla-linha">
+          <span data-en="Right Flipper" data-pt="Palheta Direita">Right Flipper</span>
+          <span class="chip-tecla" data-en="/ or C or &rarr;" data-pt="/ ou C ou &rarr;">/ or C or &rarr;</span>
+        </div>
+        <div class="tecla-linha">
+          <span data-en="Plunger (Launch)" data-pt="Lançar Bola (Plunger)">Plunger (Launch)</span>
+          <span class="chip-tecla" data-en="SPACE or &darr;" data-pt="ESPAÇO ou &darr;">SPACE or &darr;</span>
+        </div>
+        <div class="tecla-linha">
+          <span data-en="Nudge / Tilt" data-pt="Tremer Mesa (Tilt)">Nudge / Tilt</span>
+          <span class="chip-tecla" data-en="X or &uarr;" data-pt="X ou &uarr;">X or &uarr;</span>
+        </div>
+        <div class="tecla-linha">
+          <span data-en="Restart Game" data-pt="Reiniciar Partida">Restart Game</span>
+          <span class="chip-tecla">R or F2</span>
+        </div>
+        <div class="tecla-linha">
+          <span data-en="Toggle Audio" data-pt="Ligar / Desligar Som">Toggle Audio</span>
+          <span class="chip-tecla">T or M</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Ações Rápidas -->
+    <div class="card-arcade">
+      <h3 data-en="TABLE ACTIONS" data-pt="AÇÕES DA MESA">TABLE ACTIONS</h3>
+      <div class="acoes-grid">
+        <button class="btn-acao destaque" id="btn-disparar-bola" data-en="&#9889; LAUNCH BALL (SPACE)" data-pt="&#9889; LANÇAR BOLA (ESPAÇO)">&#9889; LAUNCH BALL (SPACE)</button>
+        <button class="btn-acao" id="btn-reiniciar-jogo" data-en="&#128260; RESTART (R)" data-pt="&#128260; REINICIAR (R)">&#128260; RESTART (R)</button>
+        <button class="btn-acao" id="btn-alternar-som" data-en="&#128266; SOUND (T)" data-pt="&#128266; SOM (T)">&#128266; SOUND (T)</button>
+        <button class="btn-acao" id="btn-tremer-mesa" data-en="&#128243; NUDGE (X)" data-pt="&#128243; TREMER (X)">&#128243; NUDGE (X)</button>
+        <button class="btn-acao" id="btn-tela-cheia" data-en="&#128470; FULLSCREEN" data-pt="&#128470; TELA CHEIA">&#128470; FULLSCREEN</button>
+      </div>
+    </div>
+
+    <!-- Card: Detalhes Técnicos -->
+    <div class="card-arcade">
+      <h3 data-en="PHYSICS ENGINE" data-pt="MOTOR DE FÍSICA">PHYSICS ENGINE</h3>
+      <p style="font-size:10px; line-height:1.7; color:#64748b;" data-en="Original 1995 pinball table executed directly in the browser via WebAssembly (SDL2). Identical collision physics running at smooth 60 FPS." data-pt="Mesa original de 1995 executada diretamente no navegador via WebAssembly (SDL2). Física de colisão idêntica à versão de fábrica, com taxas de amostragem de 60 quadros por segundo e renderização fiel.">
+        Original 1995 pinball table executed directly in the browser via WebAssembly (SDL2). Identical collision physics running at smooth 60 FPS.
+      </p>
+    </div>
+  </aside>
+
+</div>
+
+<!-- ROTEADOR COMPARTILHADO -->
+<script src="roteador.js"></script>
+
+<script>
+"use strict";
+
+// Variável global obrigatória para o motor C++ em WebAssembly
+window.GAME_SOUND_ENABLED = true;
+var GAME_SOUND_ENABLED = true;
+
+// Configuração do ambiente Emscripten
+var Module = {
+  preRun: [],
+  postRun: [function() {
+    console.log("Space Cadet inicializado com sucesso!");
+    const spinner = document.getElementById("spinner-carregando");
+    const overlay = document.getElementById("overlay-inicio");
+    if (spinner) spinner.style.display = "none";
+    if (overlay) overlay.style.display = "none";
+    ajustarTamanhoMesa();
+  }],
+  print: function(text) { console.log(text); },
+  printErr: function(text) { console.warn(text); },
+  canvas: (function() {
+    var c = document.getElementById("canvas");
+    c.addEventListener("webglcontextlost", function(e) { e.preventDefault(); }, false);
+    return c;
+  })(),
+  setStatus: function(text) {
+    if (text) console.log("Status WASM:", text);
+  },
+  totalDependencies: 0,
+  monitorRunDependencies: function(left) {}
+};
+
+// Disparador de teclas sintetizadas para o canvas do jogo
+function dispararTecla(tipo, key, code, keyCode) {
+  const canvas = document.getElementById("canvas");
+  const ev = new KeyboardEvent(tipo, {
+    key: key,
+    code: code,
+    which: keyCode,
+    keyCode: keyCode,
+    bubbles: true,
+    cancelable: true
+  });
+  canvas.dispatchEvent(ev);
+  document.dispatchEvent(ev);
+
+  // Efeito visual de luz neon nas palhetas/disparo
+  if (tipo === "keydown") {
+    const neon = document.getElementById("neon-glow");
+    if (neon) {
+      neon.classList.add("ativo");
+      setTimeout(() => neon.classList.remove("ativo"), 120);
+    }
+  }
+}
+
+// Mapeamento ergonômico de teclas do teclado
+document.addEventListener("keydown", function(e) {
+  const k = e.key;
+  if (k === "ArrowLeft" || k === "a" || k === "A") {
+    dispararTecla("keydown", "z", "KeyZ", 90);
+    e.preventDefault();
+  } else if (k === "ArrowRight" || k === "c" || k === "C" || k === "d" || k === "D") {
+    dispararTecla("keydown", "/", "Slash", 191);
+    e.preventDefault();
+  } else if (k === "ArrowDown" || k === "Enter") {
+    dispararTecla("keydown", " ", "Space", 32);
+    e.preventDefault();
+  } else if (k === "ArrowUp" || k === "w" || k === "W") {
+    dispararTecla("keydown", "x", "KeyX", 88);
+    e.preventDefault();
+  } else if (k === "r" || k === "R") {
+    dispararTecla("keydown", "F2", "F2", 113);
+  } else if (k === "m" || k === "M" || k === "t" || k === "T") {
+    alternarSom();
+  }
+});
+
+document.addEventListener("keyup", function(e) {
+  const k = e.key;
+  if (k === "ArrowLeft" || k === "a" || k === "A") {
+    dispararTecla("keyup", "z", "KeyZ", 90);
+    e.preventDefault();
+  } else if (k === "ArrowRight" || k === "c" || k === "C" || k === "d" || k === "D") {
+    dispararTecla("keyup", "/", "Slash", 191);
+    e.preventDefault();
+  } else if (k === "ArrowDown" || k === "Enter") {
+    dispararTecla("keyup", " ", "Space", 32);
+    e.preventDefault();
+  } else if (k === "ArrowUp" || k === "w" || k === "W") {
+    dispararTecla("keyup", "x", "KeyX", 88);
+    e.preventDefault();
+  } else if (k === "r" || k === "R") {
+    dispararTecla("keyup", "F2", "F2", 113);
+  }
+});
+
+// Alternar Áudio
+function alternarSom() {
+  GAME_SOUND_ENABLED = !GAME_SOUND_ENABLED;
+  try {
+    if (Module.SDL2 && Module.SDL2.audioContext) {
+      if (!GAME_SOUND_ENABLED) {
+        Module.SDL2.audioContext.suspend();
+      } else {
+        Module.SDL2.audioContext.resume();
+      }
+    }
+  } catch (err) {}
+}
+
+// Botões de ação da interface
+document.getElementById("btn-iniciar").addEventListener("click", iniciarJogo);
+document.getElementById("btn-disparar-bola").addEventListener("mousedown", () => dispararTecla("keydown", " ", "Space", 32));
+document.getElementById("btn-disparar-bola").addEventListener("mouseup", () => dispararTecla("keyup", " ", "Space", 32));
+document.getElementById("btn-reiniciar-jogo").addEventListener("click", () => {
+  dispararTecla("keydown", "F2", "F2", 113);
+  setTimeout(() => dispararTecla("keyup", "F2", "F2", 113), 50);
+});
+document.getElementById("btn-alternar-som").addEventListener("click", alternarSom);
+document.getElementById("btn-tremer-mesa").addEventListener("click", () => {
+  dispararTecla("keydown", "x", "KeyX", 88);
+  setTimeout(() => dispararTecla("keyup", "x", "KeyX", 88), 100);
+});
+document.getElementById("btn-tela-cheia").addEventListener("click", () => {
+  const v = document.getElementById("viewport");
+  if (!document.fullscreenElement) {
+    if (v.requestFullscreen) v.requestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+});
+
+// Inicialização sob demanda
+let jogoIniciado = false;
+function iniciarJogo() {
+  if (jogoIniciado) return;
+  jogoIniciado = true;
+
+  document.getElementById("btn-iniciar").style.display = "none";
+  document.getElementById("spinner-carregando").style.display = "flex";
+
+  const script = document.createElement("script");
+  script.src = "3DPinballSpaceCadet.js";
+  document.body.appendChild(script);
+}
+
+// Ajuste dinâmico responsivo da mesa para OCUPAR A ALTURA VERTICAL MÁXIMA
+function ajustarTamanhoMesa() {
+  const viewport = document.getElementById("viewport");
+  const canvas = document.getElementById("canvas");
+  if (!viewport || !canvas) return;
+
+  const rect = viewport.getBoundingClientRect();
+  const proporcao = 600 / 440; // Proporção nativa do Space Cadet (1.3636...)
+
+  // Prioridade absoluta: preencher 100% da altura vertical disponível!
+  let h = Math.floor(rect.height - 2);
+  let w = Math.floor(h * proporcao);
+
+  // Se a largura calculada for maior que o espaço horizontal da área central:
+  if (w > rect.width - 2) {
+    w = Math.floor(rect.width - 2);
+    h = Math.floor(w / proporcao);
+  }
+
+  canvas.style.setProperty("width", w + "px", "important");
+  canvas.style.setProperty("height", h + "px", "important");
+}
+
+// Alternar exibição dos painéis laterais para ganho total de espaço
+const btnToggle = document.getElementById("btn-toggle-paineis");
+if (btnToggle) {
+  btnToggle.addEventListener("click", () => {
+    const esq = document.getElementById("painel-esq");
+    const dir = document.getElementById("painel-dir");
+    const ocultos = esq.classList.toggle("oculto");
+    dir.classList.toggle("oculto", ocultos);
+    btnToggle.innerHTML = ocultos ? "&#9638; MOSTRAR PAINÉIS" : "&#9697; MAXIMIZAR TELA";
+    ajustarTamanhoMesa();
+    setTimeout(ajustarTamanhoMesa, 220);
+  });
+}
+
+// Sincronização contínua nos primeiros instantes após carregamento
+window.addEventListener("resize", ajustarTamanhoMesa);
+window.addEventListener("load", () => {
+  ajustarTamanhoMesa();
+  let frames = 0;
+  function loopInit() {
+    ajustarTamanhoMesa();
+    if (++frames < 40) requestAnimationFrame(loopInit);
+  }
+  requestAnimationFrame(loopInit);
+});
+</script>
+
+</body>
+</html>

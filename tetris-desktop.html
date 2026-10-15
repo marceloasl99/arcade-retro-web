@@ -46,20 +46,21 @@
 </style>
 </head>
 <body>
-<a id="voltar" href="index.html">&larr; JOGOS</a>
+<a id="voltar" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+<button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="position:fixed;top:10px;right:14px;z-index:5;background:transparent;border:1px solid #9BBC0F;color:#9BBC0F;padding:3px 8px;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer;opacity:0.8;">🇺🇸 EN &middot; PT</button>
 
 <canvas id="tela" width="160" height="144"></canvas>
 
-<div id="ajuda">
-  <b>&larr; &rarr;</b> mover <span class="sep">|</span>
-  <b>&darr;</b> descer rapido <span class="sep">|</span>
-  <b>X</b> ou <b>&uarr;</b> girar <span class="sep">|</span>
-  <b>Z</b> girar ao contrario <span class="sep">|</span>
-  <b>ENTER</b> comecar/pausar<br>
-  <b>M</b> som <span class="sep">|</span>
-  <b>2</b> cores <span class="sep">|</span>
-  <b>F</b> tela cheia <span class="sep">|</span>
-  no titulo, <b>&uarr; &darr;</b> escolhem o nivel
+<div id="ajuda" data-en="<b>&larr; &rarr;</b> move <span class='sep'>|</span> <b>&darr;</b> soft drop <span class='sep'>|</span> <b>X</b> or <b>&uarr;</b> rotate CW <span class='sep'>|</span> <b>Z</b> rotate CCW <span class='sep'>|</span> <b>ENTER</b> start/pause<br><b>M</b> sound <span class='sep'>|</span> <b>2</b> colors <span class='sep'>|</span> <b>F</b> fullscreen <span class='sep'>|</span> on title, <b>&uarr; &darr;</b> select level" data-pt="<b>&larr; &rarr;</b> mover <span class='sep'>|</span> <b>&darr;</b> descer rapido <span class='sep'>|</span> <b>X</b> ou <b>&uarr;</b> girar <span class='sep'>|</span> <b>Z</b> girar ao contrario <span class='sep'>|</span> <b>ENTER</b> comecar/pausar<br><b>M</b> som <span class='sep'>|</span> <b>2</b> cores <span class='sep'>|</span> <b>F</b> tela cheia <span class='sep'>|</span> no titulo, <b>&uarr; &darr;</b> escolhem o nivel">
+  <b>&larr; &rarr;</b> move <span class="sep">|</span>
+  <b>&darr;</b> soft drop <span class="sep">|</span>
+  <b>X</b> or <b>&uarr;</b> rotate CW <span class="sep">|</span>
+  <b>Z</b> rotate CCW <span class="sep">|</span>
+  <b>ENTER</b> start/pause<br>
+  <b>M</b> sound <span class="sep">|</span>
+  <b>2</b> colors <span class="sep">|</span>
+  <b>F</b> fullscreen <span class="sep">|</span>
+  on title, <b>&uarr; &darr;</b> select level
 </div>
 
 <div id="rodape">Game Boy &middot; 160x144 &middot; 10x18</div>

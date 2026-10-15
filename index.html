@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080c08">
-<title>ARCADE RETRÔ — escolha o jogo</title>
+<title>RETRO ARCADE — Select a Game / Escolha o Jogo</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -12,141 +12,202 @@
     --verde: #55ff55;
     --verde2: #9bbc0f;
     --verde3: #00aa00;
-    --escuro: #0d1409;
-    --borda: #26301a;
+    --escuro: #0a1107;
+    --card-bg: rgba(10, 17, 7, 0.92);
+    --borda: #1f2a14;
+    --borda-brilho: rgba(85,255,85,0.22);
   }
 
   html, body {
-    min-height:100%;
+    width:100%; min-height:100%;
     background:#080c08;
     color:#cfe6a0;
     font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
     -webkit-text-size-adjust:100%;
   }
+
   body {
-    display:flex; flex-direction:column; align-items:center;
-    padding:clamp(14px, 3vh, 34px) clamp(12px, 4vw, 40px) 40px;
-    gap:clamp(14px, 2.5vh, 26px);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding:8px 16px 10px; gap:8px;
     background:
-      radial-gradient(1200px 600px at 50% -10%, rgba(85,255,85,.07), transparent 70%),
+      radial-gradient(1400px 700px at 50% -10%, rgba(85,255,85,.08), transparent 75%),
       #080c08;
   }
 
-  header { text-align:center; max-width:760px; }
+  /* ---------------- HEADER ---------------- */
+  header {
+    text-align:center; width:100%; max-width:1280px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+
+  .topo-barra {
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1px;
+  }
+
+  /* Seletor de Idioma */
+  .lang-switcher {
+    display:inline-flex; align-items:center; background:#0e1709;
+    border:1px solid var(--borda); border-radius:20px; padding:2px;
+    box-shadow:0 0 10px rgba(0,0,0,0.5);
+  }
+  .btn-lang {
+    background:transparent; border:none; color:#7f9a5a;
+    font-family:inherit; font-size:10px; font-weight:800; letter-spacing:0.06em;
+    padding:3px 8px; border-radius:14px; cursor:pointer; transition:all 0.15s;
+  }
+  .btn-lang:hover { color:#cfe6a0; }
+  .btn-lang.ativo {
+    background:var(--verde); color:#04140a;
+    box-shadow:0 0 12px rgba(85,255,85,0.4);
+  }
+
   h1 {
-    font-size:clamp(24px, 5vw, 42px);
-    letter-spacing:.14em;
+    font-size:clamp(18px, 2.2vw, 24px);
+    letter-spacing:.12em;
     color:var(--verde);
-    text-shadow:0 0 14px rgba(85,255,85,.35);
-    font-weight:800;
+    text-shadow:0 0 12px rgba(85,255,85,.35);
+    font-weight:900;
   }
   header .sub {
-    margin-top:8px; font-size:clamp(11px, 1.7vw, 14px);
-    color:#7f9a5a; letter-spacing:.06em;
+    font-size:10.5px;
+    color:#7f9a5a; letter-spacing:.04em;
   }
   #aparelho {
-    margin-top:14px; font-size:clamp(11px, 1.7vw, 13px);
-    color:#a9c97a; line-height:1.7;
+    font-size:10px; color:#a9c97a; line-height:1.4;
+    margin-top:1px;
   }
   #aparelho a { color:var(--verde2); }
   #aparelho b { color:var(--verde); }
 
+  /* ---------------- GRID DOS 9 JOGOS (3x3 SEM ROLAGEM NO FULL HD) ---------------- */
   #lista {
-    width:100%; max-width:880px;
-    display:flex; flex-direction:column; gap:clamp(12px, 2vh, 20px);
+    width:100%; max-width:1280px;
+    display:grid; grid-template-columns:repeat(3, 1fr);
+    gap:8px;
   }
 
   .card {
-    display:flex; gap:clamp(12px, 2.5vw, 24px); align-items:center;
-    background:var(--escuro);
+    background:var(--card-bg);
     border:1px solid var(--borda);
-    border-radius:14px;
-    padding:clamp(12px, 2.4vw, 20px);
+    border-radius:10px;
+    padding:8px 10px;
+    display:flex; flex-direction:column; justify-content:space-between; gap:6px;
     transition:border-color .15s, transform .15s, box-shadow .15s;
+    box-shadow:0 3px 12px rgba(0,0,0,.6);
   }
   .card:hover {
     border-color:var(--verde3);
-    transform:translateY(-2px);
-    box-shadow:0 8px 30px rgba(0,0,0,.5), 0 0 0 1px rgba(85,255,85,.12) inset;
+    transform:translateY(-1px);
+    box-shadow:0 6px 18px rgba(0,0,0,.7), 0 0 0 1px rgba(85,255,85,.15) inset;
   }
 
+  /* Cabeçalho do Card (Ícone Canvas + Título + Console) */
+  .card-topo {
+    display:flex; align-items:center; gap:8px;
+  }
   .icone {
     flex:0 0 auto; display:block;
+    width:52px; height:26px;
     image-rendering:pixelated;
+    image-rendering:crisp-edges;
     background:#0a0f07;
     border:1px solid var(--borda);
-    border-radius:8px;
+    border-radius:5px;
   }
-
-  .info { flex:1 1 auto; min-width:0; }
-  .info h2 {
-    font-size:clamp(17px, 2.6vw, 23px); letter-spacing:.1em;
-    color:var(--verde); font-weight:800;
+  .card-meta {
+    flex:1 1 auto; min-width:0;
+  }
+  .card-meta h2 {
+    font-size:13px; letter-spacing:.06em;
+    color:var(--verde); font-weight:800; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
   }
   .console {
-    display:inline-block; margin-top:6px;
-    font-size:clamp(9px, 1.3vw, 11px); letter-spacing:.12em;
-    padding:3px 8px; border-radius:20px;
+    display:inline-block; margin-top:1px;
+    font-size:8.5px; letter-spacing:.08em;
+    padding:1px 5px; border-radius:10px;
     border:1px solid var(--borda); color:var(--verde2);
-    background:#0a1006;
-  }
-  .info p {
-    margin-top:10px; font-size:clamp(11px, 1.6vw, 13px);
-    line-height:1.65; color:#9db874;
-  }
-  .teclas {
-    margin-top:8px !important;
-    color:#6f8a4c !important; font-size:clamp(10px, 1.4vw, 12px) !important;
+    background:#0a1006; font-weight:700;
   }
 
-  .acoes {
-    flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:9px;
+  /* Descrição e Controles do Card */
+  .card-corpo {
+    flex:1 1 auto; display:flex; flex-direction:column; gap:4px;
+  }
+  .card-corpo p {
+    font-size:10px; line-height:1.35; color:#9db874;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; height:26px;
+  }
+  .teclas {
+    color:#6f8a4c !important; font-size:9px !important;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:block !important; height:auto !important;
+  }
+
+  /* Ações do Card */
+  .card-acoes {
+    flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    gap:6px; padding-top:4px; border-top:1px solid rgba(255,255,255,0.04);
   }
   .jogar {
-    display:inline-block; text-decoration:none; text-align:center;
-    padding:13px 26px; border-radius:10px;
+    display:inline-flex; align-items:center; justify-content:center;
+    text-decoration:none; text-align:center;
+    padding:5px 12px; border-radius:6px;
     background:var(--verde); color:#04140a;
-    font-weight:800; letter-spacing:.12em;
-    font-size:clamp(12px, 1.8vw, 15px);
-    border:2px solid var(--verde);
+    font-weight:900; letter-spacing:.08em;
+    font-size:11px; border:2px solid var(--verde);
     transition:transform .1s, box-shadow .15s;
     white-space:nowrap;
   }
-  .jogar:hover { transform:scale(1.04); box-shadow:0 0 22px rgba(85,255,85,.35); }
+  .jogar:hover { transform:scale(1.03); box-shadow:0 0 12px rgba(85,255,85,.4); }
   .outra {
-    font-size:clamp(9px, 1.3vw, 11px); color:#6f8a4c; text-align:center;
+    font-size:9.5px; color:#6f8a4c; text-align:right;
   }
-  .outra a { color:var(--verde2); }
+  .outra a { color:var(--verde2); text-decoration:underline; }
 
+  /* ---------------- FOOTER ---------------- */
   footer {
-    max-width:880px; text-align:center;
-    font-size:clamp(10px, 1.4vw, 12px); color:#5f7742; line-height:1.8;
+    width:100%; max-width:1280px; text-align:center;
+    font-size:9.5px; color:#5f7742; line-height:1.4;
+    margin-top:1px;
   }
   footer code { color:var(--verde2); }
 
-  /* telas estreitas: o cartao vira coluna */
-  @media (max-width: 620px) {
-    .card { flex-direction:column; align-items:stretch; text-align:center; }
-    .icone { align-self:center; }
-    .console { align-self:center; }
-    .acoes { align-items:stretch; }
+  /* ---------------- RESPONSIVIDADE ---------------- */
+  @media (max-width: 1100px) {
+    #lista { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 680px) {
+    #lista { grid-template-columns: 1fr; }
+    .card-acoes { flex-direction:column; align-items:stretch; }
     .jogar { width:100%; }
+    .outra { text-align:center; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>ARCADE RETR&#212;</h1>
-  <div class="sub">jogos cl&#225;ssicos recriados em pixels &middot; vers&#227;o de computador e de celular</div>
+  <div class="topo-barra">
+    <div style="font-size:11px; color:#6f8a4c; font-weight:700;">ARCADE 9-IN-1</div>
+    <div class="lang-switcher">
+      <button type="button" id="btn-en" class="btn-lang ativo">🇺🇸 ENGLISH</button>
+      <button type="button" id="btn-pt" class="btn-lang">🇧🇷 PORTUGUÊS</button>
+    </div>
+  </div>
+
+  <h1 id="txt-titulo">RETRO ARCADE</h1>
+  <div class="sub" id="txt-sub">classic arcade games recreated in pixels · desktop &amp; mobile versions</div>
   <div id="aparelho"></div>
 </header>
 
 <main id="lista"></main>
 
-<footer>
-  Cada jogo tem duas vers&#245;es: <b>computador</b> (teclado) e <b>celular</b> (bot&#245;es na tela).<br>
-  Para for&#231;ar uma delas, use <code>index.html?desktop=1</code> ou <code>index.html?mobile=1</code>.
+<footer id="txt-footer">
+  Each game features two tailored editions: <b>Desktop</b> (keyboard) and <b>Mobile</b> (touch controls).<br>
+  To force a version, append <code>?desktop=1</code> or <code>?mobile=1</code> to the URL.
 </footer>
 
 <script src="roteador.js"></script>
@@ -155,178 +216,415 @@
 (function () {
 
   /* ==========================================================================
-     LISTA DE JOGOS
-     --------------------------------------------------------------------------
-     Para adicionar um jogo novo:
-       1. crie os arquivos  NOME-desktop.html  e  NOME-mobile.html
-          (copie um jogo existente como base e inclua <script src="roteador.js">
-           e, se o motor for compartilhado, o <script src="NOME.js">)
-       2. acrescente um item aqui embaixo, com o mesmo "id" do icone
-       3. pronto: o cardapio e o roteamento por aparelho ja funcionam
+     LISTA DE JOGOS (PRESERVANDO OS 'nome' EXATOS PARA O AUTO-TESTE)
      ========================================================================== */
   var JOGOS = [
     {
       id: 'minhoquinha',
       nome: 'MINHOQUINHA',
-      console: 'NOKIA 3310',
-      descricao: 'A cobrinha que come&#231;ou tudo: coma os pontos, cres&#231;a e n&#227;o bata na parede nem no pr&#243;prio corpo.',
+      tituloEn: 'SNAKE',
+      tituloPt: 'MINHOQUINHA',
+      consoleEn: 'NOKIA 3310',
+      consolePt: 'NOKIA 3310',
+      descEn: 'The iconic dot-eating snake: eat dots, grow your tail, and avoid walls and your own body.',
+      descPt: 'A cobrinha que come&#231;ou tudo: coma os pontos, cres&#231;a e n&#227;o bata na parede nem no pr&#243;prio corpo.',
       desktop: 'minhoquinha-desktop.html',
       mobile: 'minhoquinha-mobile.html',
-      teclasPc: 'Setas ou WASD &middot; P pausa &middot; 1/2/3 trocam as paletas CGA',
-      teclasCel: 'D-pad de 4 setas na tela &middot; arraste o dedo para virar'
+      teclasPcEn: 'Arrow keys or WASD &middot; P pause &middot; 1/2/3 switch palettes',
+      teclasPcPt: 'Setas ou WASD &middot; P pausa &middot; 1/2/3 trocam as paletas CGA',
+      teclasCelEn: 'On-screen 4-way D-Pad &middot; swipe to steer',
+      teclasCelPt: 'D-pad de 4 setas na tela &middot; arraste o dedo para virar'
     },
     {
       id: 'tetris',
       nome: 'TETRIS',
-      console: 'GAME BOY',
-      descricao: 'A tela verde de 160x144, tabuleiro 10x18, pr&#243;xima pe&#231;a, n&#237;veis e a m&#250;sica da carrocinha.',
+      tituloEn: 'TETRIS',
+      tituloPt: 'TETRIS',
+      consoleEn: 'GAME BOY 1989',
+      consolePt: 'GAME BOY 1989',
+      descEn: 'Classic 160x144 matrix, ghost piece, next queue, progressive levels, and Korobeiniki tune.',
+      descPt: 'A tela verde de 160x144, tabuleiro 10x18, pr&#243;xima pe&#231;a, n&#237;veis e a m&#250;sica da carrocinha.',
       desktop: 'tetris-desktop.html',
       mobile: 'tetris-mobile.html',
-      teclasPc: '&#8592; &#8594; mover &middot; &#8595; descer &middot; X/Z girar &middot; ENTER pausa &middot; M som',
-      teclasCel: 'Bot&#245;es <b>B</b> e <b>A</b> giram &middot; setas movem e descem &middot; CENTRAL pausa'
+      teclasPcEn: '&larr; &rarr; move &middot; &darr; soft drop &middot; X/Z rotate &middot; ENTER pause &middot; M sound',
+      teclasPcPt: '&#8592; &#8594; mover &middot; &#8595; descer &middot; X/Z girar &middot; ENTER pausa &middot; M som',
+      teclasCelEn: 'B &amp; A buttons rotate &middot; arrows move &middot; CENTER pauses',
+      teclasCelPt: 'Bot&#245;es <b>B</b> e <b>A</b> giram &middot; setas movem e descem &middot; CENTRAL pausa'
     },
     {
       id: 'pinball',
       nome: 'PINBALL 3D',
-      console: 'FLIPERAMA',
-      descricao: '5 mesas retr&#244; 3D (Espa&#231;o, Fliperama, Selva, Pirata e Neon) com f&#237;sica real, multiball, po&#231;os e fun&#231;&#227;o tremer a mesa.',
+      tituloEn: 'PINBALL 3D',
+      tituloPt: 'PINBALL 3D',
+      consoleEn: 'ARCADE FLIPPER',
+      consolePt: 'FLIPERAMA',
+      descEn: '5 retro 3D tables (Space, Arcade, Jungle, Pirate, Neon) with real physics, multiball, and nudge.',
+      descPt: '5 mesas retr&#244; 3D (Espa&#231;o, Fliperama, Selva, Pirata e Neon) com f&#237;sica real, multiball e tremer.',
       desktop: 'pinball-desktop.html',
       mobile: 'pinball-mobile.html',
-      teclasPc: '&#8592; &#8594; ou A/D flippers &middot; ESPA&#199;O lan&#231;ador &middot; Z/X tremer mesa &middot; 1 a 5 mesas',
-      teclasCel: '4 bot&#245;es t&#225;teis: flippers, lan&#231;ador de for&#231;a e tremer a mesa (nudge)'
+      teclasPcEn: '&larr; &rarr; / A-D flippers &middot; SPACE plunger &middot; Z/X table nudge &middot; 1 to 5 tables',
+      teclasPcPt: '&#8592; &#8594; ou A/D flippers &middot; ESPA&#199;O lan&#231;ador &middot; Z/X tremer mesa &middot; 1 a 5 mesas',
+      teclasCelEn: '4 touch buttons: flippers, power plunger, and table nudge',
+      teclasCelPt: '4 bot&#245;es t&#225;teis: flippers, lan&#231;ador de for&#231;a e tremer a mesa (nudge)'
     },
     {
       id: 'space-invaders',
       nome: 'SPACE INVADERS',
-      console: 'ARCADE 1978',
-      descricao: 'O cl&#225;ssico que definiu os videogames: 55 invasores marchando, 4 barreiras destrut&#237;veis, nave-m&#227;e misteriosa e o ritmo fren&#233;tico de 4 tons.',
+      tituloEn: 'SPACE INVADERS',
+      tituloPt: 'SPACE INVADERS',
+      consoleEn: 'ARCADE 1978',
+      consolePt: 'ARCADE 1978',
+      descEn: '55 marching invaders, 4 destructible bunkers, mystery UFO saucer, and accelerating 4-tone bass.',
+      descPt: 'O cl&#225;ssico que definiu os videogames: 55 invasores marchando, 4 barreiras destrut&#237;veis e nave-m&#227;e.',
       desktop: 'space-invaders-desktop.html',
       mobile: 'space-invaders-mobile.html',
-      teclasPc: '&#8592; &#8594; ou A/D mover &middot; ESPA&#199;O disparar &middot; P/ESC pausa &middot; M som &middot; ENTER come&#231;ar',
-      teclasCel: 'Bot&#245;es t&#225;teis &#9664; e &#9654; movem o canh&#227;o &middot; FIRE dispara &middot; PAUSA e SOM no topo'
+      teclasPcEn: '&larr; &rarr; / A-D move &middot; SPACE fire &middot; P/ESC pause &middot; M sound &middot; ENTER start',
+      teclasPcPt: '&#8592; &#8594; ou A/D mover &middot; ESPA&#199;O disparar &middot; P/ESC pausa &middot; M som &middot; ENTER come&#231;ar',
+      teclasCelEn: 'Touch &ltrif; and &rtrif; move cannon &middot; FIRE button &middot; PAUSE &amp; SOUND on top',
+      teclasCelPt: 'Bot&#245;es t&#225;teis &#9664; e &#9654; movem o canh&#227;o &middot; FIRE dispara &middot; PAUSA e SOM no topo'
+    },
+    {
+      id: 'space-cadet',
+      nome: 'SPACE CADET',
+      tituloEn: 'SPACE CADET',
+      tituloPt: 'SPACE CADET',
+      consoleEn: 'WINDOWS 95',
+      consolePt: 'WINDOWS 95',
+      descEn: 'Legendary sci-fi pinball: complete space missions, climb ranks to Fleet Admiral, hyperspace chute.',
+      descPt: 'O lend&#225;rio pinball do Windows! Complete miss&#245;es espaciais, suba de patente e ative o t&#250;nel.',
+      desktop: 'space-cadet-desktop.html',
+      mobile: 'space-cadet-mobile.html',
+      teclasPcEn: 'Z and / flippers (or &larr; &rarr;) &middot; SPACE plunger &middot; X nudge &middot; R restart &middot; T sound',
+      teclasPcPt: 'Z e / flippers (ou &#8592; &#8594;) &middot; ESPA&#199;O lan&#231;ador &middot; X tremer &middot; R reiniciar &middot; T som',
+      teclasCelEn: 'Touch flippers L/R, charge plunger, and table nudge on screen',
+      teclasCelPt: 'Bot&#245;es t&#225;teis na tela: palhetas ESQ/DIR, lan&#231;ador de carga e tremer a mesa'
+    },
+    {
+      id: 'bomberman',
+      nome: 'BOMBERMAN',
+      tituloEn: 'SUPER BOMBERMAN',
+      tituloPt: 'SUPER BOMBERMAN',
+      consoleEn: 'SNES 1993',
+      consolePt: 'SNES 1993',
+      descEn: '16-bit SNES action: drop bombs in brick mazes, collect skates &amp; fire, defeat monsters.',
+      descPt: 'O cl&#225;ssico explosivo do Super Nintendo! Plante bombas, colete patins, fogo e derrote monstros.',
+      desktop: 'bomberman-desktop.html',
+      mobile: 'bomberman-mobile.html',
+      teclasPcEn: 'WASD or Arrows move &middot; SPACE or ENTER drop bomb &middot; P pause &middot; M sound',
+      teclasPcPt: 'WASD ou Setas mover &middot; ESPA&#199;O ou ENTER soltar bomba &middot; P pausa &middot; M som',
+      teclasCelEn: '4-way virtual D-Pad &middot; large BOMB button &middot; PAUSE &amp; SOUND on top',
+      teclasCelPt: 'D-Pad de 4 dire&#231;&#245;es &middot; bot&#227;o BOMBA grande na tela &middot; PAUSA e SOM no topo'
+    },
+    {
+      id: 'defender',
+      nome: 'DEFENDER',
+      tituloEn: 'DEFENDER',
+      tituloPt: 'DEFENDER',
+      consoleEn: 'WILLIAMS 1980',
+      consolePt: 'WILLIAMS 1980',
+      descEn: '360 wrap-around radar scanner, rescue falling humanoids, smart bombs, and hyper-aggressive aliens.',
+      descPt: 'Scanner radar 360, resgate de humanoides em queda livre, bombas inteligentes e aliens mutantes.',
+      desktop: 'defender-desktop.html',
+      mobile: 'defender-mobile.html',
+      teclasPcEn: '&uarr; &darr; climb/dive &middot; &rarr; thrust &middot; &larr; rev &middot; SPACE fire &middot; B bomb &middot; H hyper',
+      teclasPcPt: '&#8593; &#8595; subir/descer &middot; &#8594; propuls&#227;o &middot; &#8592; inverter &middot; ESPA&#199;O laser &middot; B bomba',
+      teclasCelEn: 'Touch CLIMB &amp; DIVE &middot; THRUST &middot; REVERSE &middot; FIRE &middot; BOMB &middot; HYPER',
+      teclasCelPt: 'Bot&#245;es de voo: SUBIR, DESCER, INVERTER, PROPULS&#195;O, TIRO, BOMBA e HIPER'
+    },
+    {
+      id: 'pacman',
+      nome: 'PACMAN',
+      tituloEn: 'PAC-MAN',
+      tituloPt: 'PAC-MAN',
+      consoleEn: 'NAMCO 1980',
+      consolePt: 'NAMCO 1980',
+      descEn: 'Authentic 28x36 maze, Blinky, Pinky, Inky &amp; Clyde ghost AI, energizers, cherry bonus &amp; chiptune.',
+      descPt: 'O labirinto aut&#234;ntico de 28x36, 4 fantasmas com IA cl&#225;ssica, p&#237;lulas de for&#231;a e cerejas.',
+      desktop: 'pacman-desktop.html',
+      mobile: 'pacman-mobile.html',
+      teclasPcEn: 'Arrow keys or WASD move &middot; P pause &middot; M sound',
+      teclasPcPt: 'Setas ou WASD mover &middot; P pausa &middot; M som',
+      teclasCelEn: 'Ergonomic 4-way D-Pad &middot; swipe anywhere on screen to steer',
+      teclasCelPt: 'D-Pad ergon&#244;mico de 4 dire&#231;&#245;es &middot; deslize o dedo na tela para virar'
+    },
+    {
+      id: 'penalty-kick',
+      nome: 'PENALTY KICK',
+      tituloEn: 'PENALTY KICK',
+      tituloPt: 'PÊNALTI 3D',
+      consoleEn: 'WORLD CUP 3D',
+      consolePt: 'COPA 3D',
+      descEn: '3D perspective shootout: swipe curved shots as striker and dive with gloves as goalkeeper.',
+      descPt: 'Disputa 3D de p&#234;naltis: chute com curva como atacante e defenda com as luvas como goleiro.',
+      desktop: 'penalty-kick-desktop.html',
+      mobile: 'penalty-kick-mobile.html',
+      teclasPcEn: 'Click &amp; drag ball to shoot &middot; move mouse gloves to save &middot; P pause',
+      teclasPcPt: 'Clique e arraste a bola para chutar &middot; mexa o mouse com as luvas para defender',
+      teclasCelEn: 'Swipe ball to curve shot &middot; drag finger gloves across goal to save',
+      teclasCelPt: 'Arraste a bola para chutar colocado &middot; deslize o dedo para mover as luvas'
     }
   ];
 
   /* --------------------------- icones desenhados --------------------------- */
   function pintarIcone(cv, id) {
     var c = cv.getContext('2d');
-    var p = 10;                                  // tamanho do "pixel"
+    var p = cv.width / 12; // escala proporcional para o canvas de 70x35
     c.clearRect(0, 0, cv.width, cv.height);
     function bloco(x, y, cor) { c.fillStyle = cor; c.fillRect(x * p, y * p, p, p); }
 
     if (id === 'minhoquinha') {
-      // corpo da cobra + cabeca + comida, no verde da Nokia
       var corpo = [[1,3],[2,3],[3,3],[4,3],[5,3],[5,2],[6,2]];
       for (var i = 0; i < corpo.length; i++) bloco(corpo[i][0], corpo[i][1], i < 4 ? '#00aa00' : '#55ff55');
-      bloco(7, 2, '#55ff55');                     // cabeca
       bloco(7, 2, '#55ff55');
-      c.fillStyle = '#000';                       // olho
-      c.fillRect(7 * p + 6, 2 * p + 2, 3, 3);
-      bloco(10, 4, '#ff5555');                    // comida
+      c.fillStyle = '#000';
+      c.fillRect(7 * p + 3, 2 * p + 1, 2, 2);
+      bloco(10, 4, '#ff5555');
       return;
     }
 
     if (id === 'tetris') {
-      // pecas na cor do Game Boy classico
       var cor = '#9bbc0f';
-      [[2,1],[1,2],[2,2],[3,2]].forEach(function (b) { bloco(b[0], b[1], cor); });          // T
-      [[5,2],[6,2],[6,3],[7,3]].forEach(function (b) { bloco(b[0], b[1], cor); });          // S
-      [[9,1],[9,2],[9,3],[9,4]].forEach(function (b) { bloco(b[0], b[1], cor); });          // I
+      [[2,1],[1,2],[2,2],[3,2]].forEach(function (b) { bloco(b[0], b[1], cor); });
+      [[5,2],[6,2],[6,3],[7,3]].forEach(function (b) { bloco(b[0], b[1], cor); });
+      [[9,1],[9,2],[9,3],[9,4]].forEach(function (b) { bloco(b[0], b[1], cor); });
       c.fillStyle = '#0f380f';
-      c.fillRect(0, 6 * p - 2, cv.width, 2);
+      c.fillRect(0, 5 * p, cv.width, 2);
       return;
     }
 
     if (id === 'pinball') {
-      // bumpers coloridos em neon
       [[3,1],[4,1],[3,2],[4,2]].forEach(function (b) { bloco(b[0], b[1], '#00e5ff'); });
       [[7,1],[8,1],[7,2],[8,2]].forEach(function (b) { bloco(b[0], b[1], '#ff007f'); });
       [[5,2],[6,2],[5,3],[6,3]].forEach(function (b) { bloco(b[0], b[1], '#ffd700'); });
-      // bola de aco no topo
       bloco(5, 0, '#ffffff');
-      // flippers
       [[2,5],[3,5],[4,4]].forEach(function (b) { bloco(b[0], b[1], '#55aaff'); });
       [[9,5],[8,5],[7,4]].forEach(function (b) { bloco(b[0], b[1], '#55aaff'); });
-      // canal do lancador
       bloco(11, 1, '#ff3366'); bloco(11, 2, '#ff3366'); bloco(11, 3, '#ff3366');
       bloco(11, 4, '#ffffff');
       return;
     }
 
     if (id === 'space-invaders') {
-      // Invasor Crab verde no centro
       var alien = [
-        [4,0],[7,0],
-        [5,1],[6,1],
-        [4,2],[5,2],[6,2],[7,2],
+        [4,0],[7,0],[5,1],[6,1],[4,2],[5,2],[6,2],[7,2],
         [3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
-        [3,4],[5,4],[6,4],[8,4],
-        [2,3],[9,3],[2,2],[9,2],[2,4],[9,4]
+        [3,4],[5,4],[6,4],[8,4],[2,3],[9,3],[2,2],[9,2]
       ];
       for (var ai = 0; ai < alien.length; ai++) bloco(alien[ai][0], alien[ai][1], '#55ff55');
-      // olhos
       c.fillStyle = '#0a0f07';
-      c.fillRect(4 * p + 3, 3 * p + 2, 4, 5);
-      c.fillRect(7 * p + 3, 3 * p + 2, 4, 5);
-
-      // Canhão laser na base
+      c.fillRect(4 * p + 2, 3 * p + 1, 2, 3);
+      c.fillRect(7 * p + 2, 3 * p + 1, 2, 3);
       [[5,5],[6,5],[4,5],[7,5]].forEach(function (b) { bloco(b[0], b[1], '#38bdf8'); });
-      bloco(5, 4, '#38bdf8'); bloco(6, 4, '#38bdf8');
-      // Projétil laser
-      bloco(5, 2, '#ffd700'); bloco(6, 2, '#ffffff');
-
-      // UFO Saucer vermelho
-      bloco(10, 0, '#ef4444'); bloco(11, 0, '#ef4444');
-      bloco(1, 0, '#f43f5e');
+      bloco(5, 2, '#ffd700'); bloco(10, 0, '#ef4444');
       return;
     }
 
-    // reserva: reticulo generico
+    if (id === 'space-cadet') {
+      c.fillStyle = '#080c1e';
+      c.fillRect(0, 0, cv.width, cv.height);
+      [[6,0],[5,1],[6,1],[7,1],[4,2],[5,2],[7,2],[8,2],[4,3],[8,3]].forEach(function (b) {
+        bloco(b[0], b[1], '#ffd700');
+      });
+      bloco(6, 1, '#fff5a0');
+      [[3,1],[2,2],[2,3],[3,4],[9,1],[10,2],[10,3],[9,4]].forEach(function (b) {
+        bloco(b[0], b[1], '#38bdf8');
+      });
+      bloco(11, 1, '#f59e0b'); bloco(11, 2, '#f59e0b');
+      bloco(6, 4, '#ffffff');
+      [[2,5],[3,5]].forEach(function (b) { bloco(b[0], b[1], '#0ea5e9'); });
+      [[8,5],[9,5]].forEach(function (b) { bloco(b[0], b[1], '#0ea5e9'); });
+      return;
+    }
+
+    if (id === 'bomberman') {
+      c.fillStyle = '#2f7426';
+      c.fillRect(0, 0, cv.width, cv.height);
+      for (var gy = 0; gy < 6; gy++) {
+        for (var gx = 0; gx < 12; gx++) {
+          if ((gx + gy) % 2 === 0) bloco(gx, gy, '#38882e');
+        }
+      }
+      bloco(0, 1, '#475569'); bloco(0, 2, '#334155');
+      bloco(11, 4, '#9a3412'); bloco(11, 5, '#7c2d12');
+      bloco(5, 0, '#ec4899');
+      [[4,1],[6,1],[3,2],[4,2],[5,2],[6,2],[7,2]].forEach(function (b) { bloco(b[0], b[1], '#ffffff'); });
+      bloco(4, 2, '#0284c7'); bloco(6, 2, '#0284c7');
+      [[4,3],[5,3],[6,3]].forEach(function (b) { bloco(b[0], b[1], '#2563eb'); });
+      [[4,4],[5,4],[6,4]].forEach(function (b) { bloco(b[0], b[1], '#ec4899'); });
+      bloco(5, 4, '#facc15');
+      [[8,3],[9,3],[10,3],[8,4],[9,4],[10,4]].forEach(function (b) { bloco(b[0], b[1], '#111827'); });
+      bloco(9, 1, '#facc15'); bloco(9, 2, '#ea580c');
+      bloco(9, 3, '#ffffff');
+      return;
+    }
+
+    if (id === 'defender') {
+      c.fillStyle = '#050714';
+      c.fillRect(0, 0, cv.width, cv.height);
+      // Terreno
+      [[0,5],[1,5],[2,4],[3,4],[4,5],[5,5],[6,4],[7,4],[8,5],[9,5],[10,4],[11,5]].forEach(function (b) { bloco(b[0], b[1], '#ef4444'); });
+      // Scanner radar topo
+      for (var rx = 1; rx < 11; rx++) bloco(rx, 0, '#1e293b');
+      bloco(5, 0, '#38bdf8'); bloco(8, 0, '#ef4444');
+      // Nave espacial jogador
+      [[2,2],[3,2],[4,2],[3,1],[4,1],[5,2]].forEach(function (b) { bloco(b[0], b[1], '#ffffff'); });
+      bloco(1, 2, '#38bdf8'); bloco(6, 2, '#facc15');
+      // Laser veloz
+      bloco(7, 2, '#ef4444'); bloco(8, 2, '#facc15'); bloco(9, 2, '#ef4444');
+      // Lander alien
+      [[10,1],[11,1],[10,2],[11,2]].forEach(function (b) { bloco(b[0], b[1], '#22c55e'); });
+      return;
+    }
+
+    if (id === 'pacman') {
+      c.fillStyle = '#050811';
+      c.fillRect(0, 0, cv.width, cv.height);
+      // Paredes azuis labirinto
+      for (var px = 0; px < 12; px++) { bloco(px, 0, '#1e3a8a'); bloco(px, 5, '#1e3a8a'); }
+      bloco(0, 1, '#1e3a8a'); bloco(0, 4, '#1e3a8a');
+      bloco(11, 1, '#1e3a8a'); bloco(11, 4, '#1e3a8a');
+      // Pacman amarelo com boca aberta
+      [[2,2],[3,2],[4,2],[2,3],[3,3],[4,3]].forEach(function (b) { bloco(b[0], b[1], '#facc15'); });
+      bloco(4, 2, '#050811'); // boca
+      // Pontos / Energizer
+      bloco(6, 2, '#fef08a'); bloco(7, 2, '#fef08a'); bloco(8, 2, '#facc15');
+      // Fantasma Blinky vermelho
+      [[9,2],[10,2],[9,3],[10,3]].forEach(function (b) { bloco(b[0], b[1], '#ef4444'); });
+      bloco(9, 2, '#ffffff'); bloco(10, 2, '#ffffff');
+      return;
+    }
+
+    if (id === 'penalty-kick') {
+      c.fillStyle = '#0f172a';
+      c.fillRect(0, 0, cv.width, cv.height * 0.45);
+      c.fillStyle = '#16a34a';
+      c.fillRect(0, cv.height * 0.45, cv.width, cv.height * 0.55);
+      // Trave branca
+      for (var gx = 2; gx <= 9; gx++) bloco(gx, 1, '#ffffff');
+      bloco(2, 2, '#ffffff'); bloco(2, 3, '#ffffff');
+      bloco(9, 2, '#ffffff'); bloco(9, 3, '#ffffff');
+      // Rede
+      for (var ny = 2; ny <= 3; ny++) {
+        for (var nx = 3; nx <= 8; nx++) if ((nx + ny) % 2 === 0) bloco(nx, ny, 'rgba(255,255,255,0.25)');
+      }
+      // Goleiro laranja
+      [[5,2],[6,2],[5,3],[6,3]].forEach(function (b) { bloco(b[0], b[1], '#f97316'); });
+      bloco(4, 2, '#22c55e'); bloco(7, 2, '#22c55e'); // luvas
+      // Bola de futebol
+      bloco(6, 4, '#ffffff'); bloco(5, 5, '#ffffff'); bloco(6, 5, '#020617'); bloco(7, 5, '#ffffff');
+      return;
+    }
+
     for (var y = 0; y < 6; y++) for (var x = 0; x < 12; x++) if ((x + y) % 3 === 0) bloco(x, y, '#26301a');
   }
 
-  /* ------------------------------- montagem -------------------------------- */
+  /* ------------------------------- MONTAGEM & IDIOMA -------------------------------- */
   var ehMobile = (typeof window.detectarMobile === 'function') ? window.detectarMobile() : false;
-  var forcado = '';
-  if (typeof window.forcaDesktop === 'function' && window.forcaDesktop()) forcado = '?desktop=1';
-  else if (typeof window.forcaMobile === 'function' && window.forcaMobile()) forcado = '?mobile=1';
+  var idiomaAtual = (typeof window.obterIdioma === 'function') ? window.obterIdioma() : 'en';
 
+  var btnEn = document.getElementById('btn-en');
+  var btnPt = document.getElementById('btn-pt');
+  var txtTitulo = document.getElementById('txt-titulo');
+  var txtSub = document.getElementById('txt-sub');
+  var txtFooter = document.getElementById('txt-footer');
+  var aparelhoEl = document.getElementById('aparelho');
   var lista = document.getElementById('lista');
 
-  JOGOS.forEach(function (j) {
-    var recomendado = ehMobile ? j.mobile : j.desktop;
-    var outro = ehMobile ? j.desktop : j.mobile;
-    var outroForcado = (ehMobile ? '?desktop=1' : '?mobile=1');
-    var dicas = ehMobile ? j.teclasCel : j.teclasPc;
+  function renderizarMenu(lang) {
+    idiomaAtual = lang;
+    document.documentElement.lang = (lang === 'en' ? 'en' : 'pt-BR');
 
-    var card = document.createElement('article');
-    card.className = 'card';
-    card.innerHTML =
-      '<canvas class="icone" width="120" height="60"></canvas>' +
-      '<div class="info">' +
-        '<h2>' + j.nome + '</h2>' +
-        '<span class="console">' + j.console + '</span>' +
-        '<p>' + j.descricao + '</p>' +
-        '<p class="teclas">' + dicas + '</p>' +
-      '</div>' +
-      '<div class="acoes">' +
-        '<a class="jogar" href="' + recomendado + forcado + '">JOGAR</a>' +
-        '<span class="outra">ou a <a href="' + outro + outroForcado + '">' +
-          (ehMobile ? 'vers&#227;o de computador' : 'vers&#227;o de celular') + '</a></span>' +
-      '</div>';
+    btnEn.classList.toggle('ativo', lang === 'en');
+    btnPt.classList.toggle('ativo', lang === 'pt');
 
-    pintarIcone(card.querySelector('canvas'), j.id);
-    lista.appendChild(card);
+    if (lang === 'en') {
+      txtTitulo.textContent = 'RETRO ARCADE';
+      txtSub.textContent = '9 classic arcade games recreated in pixels · desktop & mobile editions';
+      txtFooter.innerHTML =
+        'Each game features two tailored editions: <b>Desktop</b> (keyboard) and <b>Mobile</b> (touch controls).<br>' +
+        'To force a version, append <code>?desktop=1</code> or <code>?mobile=1</code> to the URL.';
+    } else {
+      txtTitulo.textContent = 'ARCADE RETRÔ';
+      txtSub.textContent = '9 jogos clássicos recriados em pixels · versão de computador e celular';
+      txtFooter.innerHTML =
+        'Cada jogo tem duas versões: <b>computador</b> (teclado) e <b>celular</b> (botões na tela).<br>' +
+        'Para forçar uma delas, use <code>index.html?desktop=1</code> ou <code>index.html?mobile=1</code>.';
+    }
+
+    var forcado = '';
+    if (typeof window.forcaDesktop === 'function' && window.forcaDesktop()) forcado = '?desktop=1';
+    else if (typeof window.forcaMobile === 'function' && window.forcaMobile()) forcado = '?mobile=1';
+
+    // Dispositivo
+    var troca = ehMobile ? '?desktop=1' : '?mobile=1';
+    if (lang === 'en') {
+      aparelhoEl.innerHTML =
+        (ehMobile
+          ? 'You are on <b>mobile / tablet</b> &mdash; PLAY buttons launch touch-screen editions.'
+          : 'You are on <b>desktop PC</b> &mdash; PLAY buttons launch keyboard cabinet editions.') +
+        ' <a href="index.html' + troca + '">switch to ' + (ehMobile ? 'desktop' : 'mobile') + '</a>';
+    } else {
+      aparelhoEl.innerHTML =
+        (ehMobile
+          ? 'Você está no <b>celular ou tablet</b> &mdash; os botões JOGAR abrem com controles na tela.'
+          : 'Você está no <b>computador</b> &mdash; os botões JOGAR abrem as versões com teclado.') +
+        ' <a href="index.html' + troca + '">ver para ' + (ehMobile ? 'computador' : 'celular') + '</a>';
+    }
+
+    // Grid dos 6 Jogos
+    lista.innerHTML = '';
+    JOGOS.forEach(function (j) {
+      var recomendado = ehMobile ? j.mobile : j.desktop;
+      var outro = ehMobile ? j.desktop : j.mobile;
+      var outroForcado = (ehMobile ? '?desktop=1' : '?mobile=1');
+
+      var titulo = (lang === 'en' ? j.tituloEn : j.tituloPt);
+      var consoleTxt = (lang === 'en' ? j.consoleEn : j.consolePt);
+      var desc = (lang === 'en' ? j.descEn : j.descPt);
+      var teclas = ehMobile ? (lang === 'en' ? j.teclasCelEn : j.teclasCelPt)
+                            : (lang === 'en' ? j.teclasPcEn : j.teclasPcPt);
+
+      var btnTexto = (lang === 'en' ? 'PLAY' : 'JOGAR');
+      var outraTexto = (lang === 'en'
+        ? 'or <a href="' + outro + outroForcado + '">' + (ehMobile ? 'desktop version' : 'mobile version') + '</a>'
+        : 'ou a <a href="' + outro + outroForcado + '">' + (ehMobile ? 'versão PC' : 'versão celular') + '</a>');
+
+      var card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML =
+        '<div class="card-topo">' +
+          '<canvas class="icone" width="70" height="35"></canvas>' +
+          '<div class="card-meta">' +
+            '<h2>' + titulo + '</h2>' +
+            '<span class="console">' + consoleTxt + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-corpo">' +
+          '<p>' + desc + '</p>' +
+          '<p class="teclas">' + teclas + '</p>' +
+        '</div>' +
+        '<div class="card-acoes">' +
+          '<a class="jogar" href="' + recomendado + forcado + '">' + btnTexto + '</a>' +
+          '<span class="outra">' + outraTexto + '</span>' +
+        '</div>';
+
+      pintarIcone(card.querySelector('canvas'), j.id);
+      lista.appendChild(card);
+    });
+  }
+
+  btnEn.addEventListener('click', function () {
+    if (typeof window.definirIdioma === 'function') window.definirIdioma('en');
+    renderizarMenu('en');
   });
 
-  var aparelho = document.getElementById('aparelho');
-  var troca = ehMobile ? '?desktop=1' : '?mobile=1';
-  var rotulo = ehMobile ? 'vers&#245;es de computador' : 'vers&#245;es de celular';
-  aparelho.innerHTML =
-    (ehMobile
-      ? 'Voc&#234; est&#225; no <b>celular ou tablet</b> &mdash; os bot&#245;es JOGAR abrem as vers&#245;es com controles na tela.'
-      : 'Voc&#234; est&#225; no <b>computador</b> &mdash; os bot&#245;es JOGAR abrem as vers&#245;es com teclado.') +
-    ' <a href="index.html' + troca + '">ver as ' + rotulo + '</a>';
+  btnPt.addEventListener('click', function () {
+    if (typeof window.definirIdioma === 'function') window.definirIdioma('pt');
+    renderizarMenu('pt');
+  });
+
+  // Render inicial com o idioma ativo
+  renderizarMenu(idiomaAtual);
 })();
 </script>
 </body>

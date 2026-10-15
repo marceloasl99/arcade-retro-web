@@ -120,24 +120,25 @@
 <div id="app-mobile">
   <!-- TOPO -->
   <header id="header-mobile">
-    <a id="voltar-link" href="index.html">&larr; JOGOS</a>
+    <a id="voltar-link" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
 
     <div class="info-bar">
       <div class="info-item">
-        <span class="info-rotulo">Pontos</span>
+        <span class="info-rotulo" data-en="Score" data-pt="Pontos">Score</span>
         <span id="txt-pontos" class="info-val">000000</span>
       </div>
       <div class="info-item">
-        <span class="info-rotulo">Recorde</span>
+        <span class="info-rotulo" data-en="High Score" data-pt="Recorde">High Score</span>
         <span id="txt-recorde" class="info-val" style="color:#facc15;">000000</span>
       </div>
       <div class="info-item">
-        <span class="info-rotulo">Vidas</span>
+        <span class="info-rotulo" data-en="Lives" data-pt="Vidas">Lives</span>
         <span id="txt-vidas" class="info-val" style="color:#55ff55;">3</span>
       </div>
     </div>
 
     <div class="acoes-topo">
+      <button class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:2px 5px;min-width:44px;">🇺🇸 EN</button>
       <button id="btn-som" class="btn-topo" type="button">🔊</button>
       <button id="btn-pausa" class="btn-topo" type="button">⏸</button>
     </div>
@@ -151,11 +152,11 @@
   <!-- CONTROLES DE TOQUE -->
   <footer id="controles-deck">
     <div class="grupo-direcional">
-      <button id="btn-esq" class="btn-toque btn-mov" type="button" aria-label="Esquerda">◀</button>
-      <button id="btn-dir" class="btn-toque btn-mov" type="button" aria-label="Direita">▶</button>
+      <button id="btn-esq" class="btn-toque btn-mov" type="button" aria-label="Left">◀</button>
+      <button id="btn-dir" class="btn-toque btn-mov" type="button" aria-label="Right">▶</button>
     </div>
-    <button id="btn-fogo" class="btn-toque btn-fogo" type="button" aria-label="Disparar Laser">
-      FIRE ⚡
+    <button id="btn-fogo" class="btn-toque btn-fogo" type="button" aria-label="Fire Laser">
+      <span data-en="FIRE ⚡" data-pt="FOGO ⚡">FIRE ⚡</span>
     </button>
   </footer>
 </div>

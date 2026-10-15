@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#020617">
+<title>SUPER BOMBERMAN — Celular</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#020617; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0;
+  }
+
+  #app-mobile {
+    width:100%; max-width:440px; height:100dvh; height:100%;
+    margin:0 auto; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: radial-gradient(circle at 50% 30%, #0f172a 0%, #020617 100%);
+    overflow:hidden; position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+
+  /* ------------------- CABEÇALHO SUPERIOR ------------------- */
+  #header-mobile {
+    flex:0 0 auto; height:46px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 8px; width:100%;
+    background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(56,189,248,0.2);
+    z-index:20;
+  }
+  #voltar-link {
+    color:#38bdf8; text-decoration:none; font-size:10px; font-weight:800;
+    letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
+    flex-shrink:0;
+  }
+  .info-bar { display:flex; gap:10px; font-size:10px; align-items:center; }
+  .info-item { display:flex; flex-direction:column; align-items:center; }
+  .info-rotulo { font-size:7px; color:#64748b; letter-spacing:0.05em; text-transform:uppercase; }
+  .info-val { font-weight:800; color:#f8fafc; font-size:11px; }
+
+  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .btn-topo {
+    background:#1e293b; border:1px solid #475569; border-radius:6px;
+    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:32px; height:30px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-topo:active { background:#38bdf8; color:#0f172a; }
+
+  /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
+  #palco {
+    flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; padding:4px;
+  }
+  #arena-frame-mobile {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 24px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.25);
+    border-radius:8px; overflow:hidden; background:#000;
+  }
+  #tela {
+    display:block; width:100%; height:100%;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* ------------------- PAINEL DE CONTROLES TOUCH ------------------- */
+  #controles-deck {
+    flex:0 0 auto; padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:rgba(15,23,42,0.96); border-top:1px solid rgba(56,189,248,0.2);
+    z-index:20;
+  }
+
+  /* D-PAD 4 DIREÇÕES ERGONÔMICO */
+  .dpad-container {
+    width:150px; height:150px; position:relative; flex-shrink:0;
+  }
+  .dpad-btn {
+    position:absolute; width:48px; height:48px; background:linear-gradient(180deg, #1e293b, #0f172a);
+    border:2px solid rgba(56,189,248,0.35); border-radius:10px; color:#38bdf8;
+    font-size:22px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 0 #05070f; cursor:pointer; touch-action:none;
+    transition:transform 0.05s, background 0.05s;
+  }
+  .dpad-btn.pressed, .dpad-btn:active {
+    background:#2563eb; color:#ffffff; transform:translateY(2px);
+    box-shadow:0 1px 0 #05070f; border-color:#60a5fa;
+  }
+  #btn-up    { top:0; left:51px; }
+  #btn-down  { bottom:0; left:51px; }
+  #btn-left  { top:51px; left:0; }
+  #btn-right { top:51px; right:0; }
+  .dpad-center {
+    position:absolute; top:51px; left:51px; width:48px; height:48px;
+    background:#0f172a; border-radius:4px; pointer-events:none;
+  }
+
+  /* BOTÃO DE AÇÃO DA BOMBA */
+  .acao-container {
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:8px;
+  }
+  .btn-bomba {
+    width:100%; height:90px; border-radius:18px; font-family:inherit;
+    font-size:17px; font-weight:900; letter-spacing:0.12em; text-transform:uppercase;
+    background:linear-gradient(180deg, #dc2626, #991b1b);
+    border:3px solid #f87171; color:#ffffff;
+    box-shadow:0 5px 0 #450a0a, 0 0 20px rgba(239,68,68,0.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    cursor:pointer; touch-action:none; transition:all 0.06s;
+  }
+  .btn-bomba.pressed, .btn-bomba:active {
+    transform:translateY(4px); box-shadow:0 1px 0 #450a0a;
+    background:#ef4444; border-color:#fca5a5;
+  }
+  .btn-bomba span { font-size:10px; font-weight:700; color:#fecaca; letter-spacing:0.05em; }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+  <!-- TOPO -->
+  <header id="header-mobile">
+    <a id="voltar-link" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+
+    <div class="info-bar">
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Score" data-pt="Pontos">Score</span>
+        <span id="txt-pontos" class="info-val">000000</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Stage" data-pt="Fase">Stage</span>
+        <span id="txt-fase" class="info-val" style="color:#38bdf8;">1</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Lives" data-pt="Vidas">Lives</span>
+        <span id="txt-vidas" class="info-val" style="color:#4ade80;">3 ❤️</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Time" data-pt="Tempo">Time</span>
+        <span id="txt-tempo" class="info-val">200s</span>
+      </div>
+    </div>
+
+    <div class="acoes-topo">
+      <button class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:2px 5px;min-width:44px;">🇺🇸 EN</button>
+      <button id="btn-som" class="btn-topo" type="button" aria-label="Som">🔊</button>
+      <button id="btn-pausa" class="btn-topo" type="button" aria-label="Pausa">⏸</button>
+    </div>
+  </header>
+
+  <!-- PALCO DO JOGO -->
+  <main id="palco">
+    <div id="arena-frame-mobile">
+      <canvas id="tela" width="600" height="520"></canvas>
+    </div>
+  </main>
+
+  <!-- DECK DE CONTROLES MULTI-TOUCH -->
+  <div id="controles-deck">
+    <!-- D-PAD DE 4 DIREÇÕES -->
+    <div class="dpad-container">
+      <div class="dpad-center"></div>
+      <button id="btn-up" class="dpad-btn" type="button" aria-label="Cima">&#9650;</button>
+      <button id="btn-down" class="dpad-btn" type="button" aria-label="Baixo">&#9660;</button>
+      <button id="btn-left" class="dpad-btn" type="button" aria-label="Esquerda">&#9664;</button>
+      <button id="btn-right" class="dpad-btn" type="button" aria-label="Direita">&#9654;</button>
+    </div>
+
+    <!-- BOTÃO DE PLANTAR BOMBA -->
+    <div class="acao-container">
+      <button id="btn-bomba" class="btn-bomba" type="button">
+        <span data-en="💣 BOMB" data-pt="💣 BOMBA">💣 BOMB</span>
+        <span data-en="DROP / BLAST" data-pt="SOLTAR / DETONAR">DROP / BLAST</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="roteador.js"></script>
+<script src="bomberman.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById('tela');
+  const arenaFrame = document.getElementById('arena-frame-mobile');
+  const txtPontos = document.getElementById('txt-pontos');
+  const txtFase = document.getElementById('txt-fase');
+  const txtVidas = document.getElementById('txt-vidas');
+  const txtTempo = document.getElementById('txt-tempo');
+  const btnPausa = document.getElementById('btn-pausa');
+  const btnSom = document.getElementById('btn-som');
+
+  // Redimensionamento responsivo para preencher o palco vertical
+  function redimensionarArena() {
+    const palco = document.getElementById('palco');
+    if (!palco || !arenaFrame) return;
+
+    const rect = palco.getBoundingClientRect();
+    const pad = 4;
+    const maxW = Math.max(100, rect.width - pad);
+    const maxH = Math.max(100, rect.height - pad);
+    const prop = 600 / 520;
+
+    let w = maxW;
+    let h = w / prop;
+    if (h > maxH) {
+      h = maxH;
+      w = h * prop;
+    }
+
+    arenaFrame.style.width = Math.floor(w) + 'px';
+    arenaFrame.style.height = Math.floor(h) + 'px';
+  }
+
+  window.addEventListener('resize', redimensionarArena);
+  window.addEventListener('orientationchange', redimensionarArena);
+  setTimeout(redimensionarArena, 20);
+  setTimeout(redimensionarArena, 150);
+
+  // Inicializa o motor do Bomberman
+  const game = new Bomberman.BombermanGame(canvas, {
+    isMobile: true,
+    onHudUpdate: function (info) {
+      if (txtPontos) txtPontos.textContent = String(info.score).padStart(6, '0');
+      if (txtFase) txtFase.textContent = String(info.stage);
+      if (txtVidas) txtVidas.textContent = `${info.lives} ${info.hasHeart ? '❤️(E)' : '❤️'}`;
+      if (txtTempo) txtTempo.textContent = `${info.timeRemaining}s`;
+
+      if (btnPausa) {
+        btnPausa.textContent = info.state === 'paused' ? '▶' : '⏸';
+      }
+      if (btnSom) {
+        btnSom.textContent = info.sound ? '🔊' : '🔇';
+      }
+    }
+  });
+
+  // Top actions
+  btnPausa.addEventListener('click', function (e) {
+    e.preventDefault();
+    game.togglePause();
+  });
+  btnSom.addEventListener('click', function (e) {
+    e.preventDefault();
+    game.toggleSound();
+  });
+
+  // Tap na tela inicia caso esteja na tela de start/gameover
+  canvas.addEventListener('click', function () {
+    if (game.state === 'start' || game.state === 'gameover') {
+      game.startNewGame();
+    } else if (game.state === 'stageclear') {
+      game.nextStage();
+    }
+  });
+
+  /* ---------------- Multi-touch D-PAD & Ação ---------------- */
+  function ligarBotao(btnId, onDown, onUp) {
+    const el = document.getElementById(btnId);
+    if (!el) return;
+
+    const start = function (e) {
+      e.preventDefault();
+      el.classList.add('pressed');
+      onDown();
+    };
+
+    const stop = function (e) {
+      e.preventDefault();
+      el.classList.remove('pressed');
+      if (onUp) onUp();
+    };
+
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', stop, { passive: false });
+    el.addEventListener('touchcancel', stop, { passive: false });
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', stop);
+    el.addEventListener('mouseleave', stop);
+  }
+
+  ligarBotao('btn-up',    () => game.setDirection('up', true),    () => game.setDirection('up', false));
+  ligarBotao('btn-down',  () => game.setDirection('down', true),  () => game.setDirection('down', false));
+  ligarBotao('btn-left',  () => game.setDirection('left', true),  () => game.setDirection('left', false));
+  ligarBotao('btn-right', () => game.setDirection('right', true), () => game.setDirection('right', false));
+
+  ligarBotao('btn-bomba', () => game.triggerBomb(), null);
+
+  // Inicia loop
+  game.startLoop();
+})();
+</script>
+</body>
+</html>

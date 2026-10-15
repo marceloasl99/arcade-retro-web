@@ -99,55 +99,56 @@
 </head>
 <body>
 <div id="app">
-  <a id="voltar" href="index.html">&larr; JOGOS</a>
+  <a id="voltar" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+  <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="position:absolute;top:6px;right:8px;z-index:20;font-size:10px;color:#9BBC0F;background:transparent;border:1px solid #9BBC0F;border-radius:4px;padding:2px 5px;cursor:pointer;opacity:0.75;">🇺🇸 EN</button>
   <div id="palco"><canvas id="tela" width="160" height="144"></canvas></div>
 
   <div id="controles">
     <!-- giram a peca (B = anti-horario, A = horario, como no Game Boy) -->
     <div class="linha">
-      <button class="botao giro" id="b-b" aria-label="Girar ao contrario">
+      <button class="botao giro" id="b-b" aria-label="Rotate CCW">
         <span class="letra">B</span>
       </button>
-      <button class="botao giro" id="b-a" aria-label="Girar">
+      <button class="botao giro" id="b-a" aria-label="Rotate CW">
         <span class="letra">A</span>
       </button>
     </div>
 
     <!-- mover e descer -->
     <div class="linha">
-      <button class="botao" id="b-esq" aria-label="Esquerda">
+      <button class="botao" id="b-esq" aria-label="Left">
         <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
       </button>
-      <button class="botao" id="b-baixo" aria-label="Descer">
+      <button class="botao" id="b-baixo" aria-label="Down">
         <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
       </button>
-      <button class="botao" id="b-dir" aria-label="Direita">
+      <button class="botao" id="b-dir" aria-label="Right">
         <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
       </button>
     </div>
 
     <!-- som, pausa e cores -->
     <div class="linha">
-      <button class="botao pequeno" id="b-som" aria-label="Ligar ou desligar o som">
+      <button class="botao pequeno" id="b-som" aria-label="Toggle Sound">
         <svg class="arw" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 9 L9 9 L14 5 L14 19 L9 15 L4 15 Z"/>
           <path d="M17 8 Q20.5 12 17 16" fill="none" stroke="#9BBC0F" stroke-width="2"/>
         </svg>
       </button>
-      <button class="botao pequeno" id="b-pausa" aria-label="Pausar ou comecar">
+      <button class="botao pequeno" id="b-pausa" aria-label="Pause or Play">
         <svg class="arw ic-pause" viewBox="0 0 24 24" aria-hidden="true">
           <rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/>
         </svg>
         <svg class="arw ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 L20 12 L7 20 Z"/></svg>
       </button>
-      <button class="botao pequeno" id="b-cor" aria-label="Trocar as cores">
-        <span class="rot">COR</span>
+      <button class="botao pequeno" id="b-cor" aria-label="Switch Colors">
+        <span class="rot" data-en="PAL" data-pt="COR">PAL</span>
       </button>
     </div>
   </div>
 </div>
 
-<div id="dica">GIRE O APARELHO &#8635; MELHOR NA HORIZONTAL</div>
+<div id="dica" data-en="ROTATE DEVICE &#8635; BEST IN LANDSCAPE" data-pt="GIRE O APARELHO &#8635; MELHOR NA HORIZONTAL">ROTATE DEVICE &#8635; BEST IN LANDSCAPE</div>
 
 <script src="roteador.js"></script>
 <script src="tetris.js"></script>

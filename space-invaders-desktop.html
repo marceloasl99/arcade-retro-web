@@ -133,39 +133,42 @@
 <div id="arcade-layout">
   <!-- PAINEL LATERAL ESQUERDO -->
   <aside class="painel-lateral">
-    <a id="voltar-link" href="index.html">&larr; VOLTAR AOS JOGOS</a>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <a id="voltar-link" href="index.html" data-en="&larr; BACK TO GAMES" data-pt="&larr; VOLTAR AOS JOGOS">&larr; BACK TO GAMES</a>
+      <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="padding:5px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;border-radius:6px;font-family:inherit;font-size:10px;font-weight:800;cursor:pointer;">🇺🇸 EN &middot; PT</button>
+    </div>
 
     <div class="card-arcade">
       <div class="card-titulo">
         <span>SPACE INVADERS</span>
         <span style="color:#55ff55;">TAITO 1978</span>
       </div>
-      <p style="font-size:11px; line-height:1.5; color:#94a3b8;">
-        Defenda a Terra da invasão! Elimine as 5 fileiras de alienígenas antes que alcancem o solo e use os 4 bunkers como cobertura.
+      <p style="font-size:11px; line-height:1.5; color:#94a3b8;" data-en="Defend Earth from invasion! Eliminate all 5 rows of aliens before they reach the ground and use 4 destructible bunkers for cover." data-pt="Defenda a Terra da invasão! Elimine as 5 fileiras de alienígenas antes que alcancem o solo e use os 4 bunkers como cobertura.">
+        Defend Earth from invasion! Eliminate all 5 rows of aliens before they reach the ground and use 4 destructible bunkers for cover.
       </p>
     </div>
 
     <!-- Tabela de Invasores -->
     <div class="card-arcade">
       <div class="card-titulo">
-        <span>TABELA DE ALVOS</span>
-        <span style="color:#facc15;">PONTUAÇÃO</span>
+        <span data-en="TARGET TABLE" data-pt="TABELA DE ALVOS">TARGET TABLE</span>
+        <span style="color:#facc15;" data-en="POINTS" data-pt="PONTUAÇÃO">POINTS</span>
       </div>
       <div class="tabela-pontos">
         <div class="linha-ponto">
-          <span class="alvo-rotulo" style="color:#ef4444;">🛸 NAVE-MÃE (UFO)</span>
+          <span class="alvo-rotulo" style="color:#ef4444;" data-en="🛸 MOTHERSHIP (UFO)" data-pt="🛸 NAVE-MÃE (UFO)">🛸 MOTHERSHIP (UFO)</span>
           <span class="ponto-val" style="color:#ef4444;">50 - 300</span>
         </div>
         <div class="linha-ponto">
-          <span class="alvo-rotulo" style="color:#f43f5e;">👾 SQUID (LULA)</span>
+          <span class="alvo-rotulo" style="color:#f43f5e;" data-en="👾 SQUID" data-pt="👾 SQUID (LULA)">👾 SQUID</span>
           <span class="ponto-val" style="color:#f43f5e;">30 PTS</span>
         </div>
         <div class="linha-ponto">
-          <span class="alvo-rotulo" style="color:#38bdf8;">🦀 CRAB (CARANGUEJO)</span>
+          <span class="alvo-rotulo" style="color:#38bdf8;" data-en="🦀 CRAB" data-pt="🦀 CRAB (CARANGUEJO)">🦀 CRAB</span>
           <span class="ponto-val" style="color:#38bdf8;">20 PTS</span>
         </div>
         <div class="linha-ponto">
-          <span class="alvo-rotulo" style="color:#55ff55;">🐙 OCTOPUS (POLVO)</span>
+          <span class="alvo-rotulo" style="color:#55ff55;" data-en="🐙 OCTOPUS" data-pt="🐙 OCTOPUS (POLVO)">🐙 OCTOPUS</span>
           <span class="ponto-val" style="color:#55ff55;">10 PTS</span>
         </div>
       </div>
@@ -174,24 +177,24 @@
     <!-- Telemetria em tempo real -->
     <div class="card-arcade">
       <div class="card-titulo">
-        <span>TELEMETRIA DA BATALHA</span>
+        <span data-en="BATTLE TELEMETRY" data-pt="TELEMETRIA DA BATALHA">BATTLE TELEMETRY</span>
       </div>
       <div class="telemetria-grid">
         <div class="tele-item">
-          <div class="tele-rotulo">Invasores</div>
+          <div class="tele-rotulo" data-en="Invaders" data-pt="Invasores">Invaders</div>
           <div id="tele-aliens" class="tele-val">55 / 55</div>
         </div>
         <div class="tele-item">
-          <div class="tele-rotulo">Onda Atual</div>
+          <div class="tele-rotulo" data-en="Current Wave" data-pt="Onda Atual">Current Wave</div>
           <div id="tele-onda" class="tele-val">1</div>
         </div>
         <div class="tele-item">
-          <div class="tele-rotulo">Vidas</div>
+          <div class="tele-rotulo" data-en="Lives" data-pt="Vidas">Lives</div>
           <div id="tele-vidas" class="tele-val" style="color:#55ff55;">3</div>
         </div>
         <div class="tele-item">
-          <div class="tele-rotulo">Status</div>
-          <div id="tele-status" class="tele-val" style="font-size:11px;">PRONTO</div>
+          <div class="tele-rotulo" data-en="Status" data-pt="Status">Status</div>
+          <div id="tele-status" class="tele-val" style="font-size:11px;">READY</div>
         </div>
       </div>
     </div>
@@ -207,7 +210,7 @@
     <!-- Hall da Fama -->
     <div class="card-arcade">
       <div class="card-titulo">
-        <span>HALL DA FAMA</span>
+        <span data-en="HALL OF FAME" data-pt="HALL DA FAMA">HALL OF FAME</span>
         <span style="color:#facc15;">TOP SCORES</span>
       </div>
       <div class="ranking-linha">
@@ -227,7 +230,7 @@
         <span class="ranking-pts">038.400</span>
       </div>
       <div class="ranking-linha">
-        <span class="ranking-nome">5. VOCÊ</span>
+        <span class="ranking-nome" data-en="5. YOU" data-pt="5. VOCÊ">5. YOU</span>
         <span id="rank-voce" class="ranking-pts">000.000</span>
       </div>
     </div>
@@ -235,17 +238,17 @@
     <!-- Comandos e Ações -->
     <div class="card-arcade">
       <div class="card-titulo">
-        <span>CONTROLES DA NAVE</span>
+        <span data-en="SHIP CONTROLS" data-pt="CONTROLES DA NAVE">SHIP CONTROLS</span>
       </div>
       <div class="botoes-coluna">
-        <button id="btn-jogar" class="btn-acao btn-principal" type="button">
-          🚀 INICIAR / REINICIAR
+        <button id="btn-jogar" class="btn-acao btn-principal" type="button" data-en="🚀 START / RESTART" data-pt="🚀 INICIAR / REINICIAR">
+          🚀 START / RESTART
         </button>
-        <button id="btn-pausa" class="btn-acao" type="button">
-          ⏸ PAUSAR (P)
+        <button id="btn-pausa" class="btn-acao" type="button" data-en="⏸ PAUSE (P)" data-pt="⏸ PAUSAR (P)">
+          ⏸ PAUSE (P)
         </button>
-        <button id="btn-som" class="btn-acao" type="button">
-          🔊 SOM: ATIVADO (M)
+        <button id="btn-som" class="btn-acao" type="button" data-en="🔊 SOUND: ON (M)" data-pt="🔊 SOM: ATIVADO (M)">
+          🔊 SOUND: ON (M)
         </button>
       </div>
     </div>
@@ -253,26 +256,26 @@
     <!-- Guia de Teclas do Teclado -->
     <div class="card-arcade">
       <div class="card-titulo">
-        <span>ATALHOS DO TECLADO</span>
+        <span data-en="KEYBOARD SHORTCUTS" data-pt="ATALHOS DO TECLADO">KEYBOARD SHORTCUTS</span>
       </div>
       <div class="tecla-linha">
-        <span>Mover Canhão</span>
-        <div><span class="kbd-chip">&larr; &rarr;</span> ou <span class="kbd-chip">A / D</span></div>
+        <span data-en="Move Cannon" data-pt="Mover Canhão">Move Cannon</span>
+        <div><span class="kbd-chip">&larr; &rarr;</span> <span data-en="or" data-pt="ou">or</span> <span class="kbd-chip">A / D</span></div>
       </div>
       <div class="tecla-linha">
-        <span>Disparar Laser</span>
-        <div><span class="kbd-chip">ESPAÇO</span> ou <span class="kbd-chip">&uarr;</span></div>
+        <span data-en="Fire Laser" data-pt="Disparar Laser">Fire Laser</span>
+        <div><span class="kbd-chip">SPACE</span> <span data-en="or" data-pt="ou">or</span> <span class="kbd-chip">&uarr;</span></div>
       </div>
       <div class="tecla-linha">
-        <span>Iniciar Partida</span>
+        <span data-en="Start Game" data-pt="Iniciar Partida">Start Game</span>
         <div><span class="kbd-chip">ENTER</span></div>
       </div>
       <div class="tecla-linha">
-        <span>Pausar</span>
-        <div><span class="kbd-chip">P</span> ou <span class="kbd-chip">ESC</span></div>
+        <span data-en="Pause" data-pt="Pausar">Pause</span>
+        <div><span class="kbd-chip">P</span> <span data-en="or" data-pt="ou">or</span> <span class="kbd-chip">ESC</span></div>
       </div>
       <div class="tecla-linha">
-        <span>Ligar / Mudar Som</span>
+        <span data-en="Toggle Audio" data-pt="Ligar / Mudar Som">Toggle Audio</span>
         <div><span class="kbd-chip">M</span></div>
       </div>
     </div>
@@ -288,7 +291,7 @@
 
   var canvas = document.getElementById('tela');
   if (typeof window.criarSpaceInvaders !== 'function') {
-    alert('Erro: arquivo space-invaders.js não encontrado.');
+    alert('Error: space-invaders.js not found.');
     return;
   }
 
@@ -303,14 +306,27 @@
 
   var jogo = window.criarSpaceInvaders(canvas, {
     aoAtualizar: function (d) {
+      var isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
       if (teleAliens) teleAliens.textContent = (d.aliensVivos !== undefined ? d.aliensVivos : 55) + ' / 55';
       if (teleOnda) teleOnda.textContent = d.onda || 1;
       if (teleVidas) teleVidas.textContent = Math.max(0, d.vidas !== undefined ? d.vidas : 3);
-      if (teleStatus) teleStatus.textContent = d.estado ? d.estado.toUpperCase() : 'PRONTO';
+      if (teleStatus) {
+        var st = d.estado || 'pronto';
+        if (st === 'jogando') teleStatus.textContent = isPt ? 'JOGANDO' : 'PLAYING';
+        else if (st === 'pausado') teleStatus.textContent = isPt ? 'PAUSADO' : 'PAUSED';
+        else if (st === 'fim') teleStatus.textContent = isPt ? 'GAME OVER' : 'GAME OVER';
+        else if (st === 'vitoria') teleStatus.textContent = isPt ? 'VITÓRIA' : 'VICTORY';
+        else teleStatus.textContent = isPt ? 'PRONTO' : 'READY';
+      }
       if (rankVoce) rankVoce.textContent = String(d.pontos || 0).padStart(6, '0');
-      if (rankTop) rankTop.textContent = String(Math.max(99900, d.recorde || 0)).padStart(6, '0');
-      if (btnPausa) btnPausa.textContent = d.pausado ? '▶ CONTINUAR (P)' : '⏸ PAUSAR (P)';
-      if (btnSom) btnSom.textContent = d.som ? '🔊 SOM: ATIVADO (M)' : '🔇 SOM: MUDO (M)';
+      if (rankTop && d.recorde > 99900) rankTop.textContent = String(d.recorde).padStart(6, '0');
+
+      if (btnPausa) {
+        btnPausa.textContent = d.estado === 'pausado' ? (isPt ? '▶ CONTINUAR (P)' : '▶ RESUME (P)') : (isPt ? '⏸ PAUSAR (P)' : '⏸ PAUSE (P)');
+      }
+      if (btnSom) {
+        btnSom.textContent = d.somAtivo ? (isPt ? '🔊 SOM: ATIVADO (M)' : '🔊 SOUND: ON (M)') : (isPt ? '🔇 SOM: MUDO (M)' : '🔇 SOUND: MUTED (M)');
+      }
     }
   });
 

@@ -181,23 +181,24 @@
 
 <!-- HUD Superior Compacto -->
 <div id="hud-topo">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <a class="hud-btn" href="index.html">&larr; JOGOS</a>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <a class="hud-btn" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+    <button class="hud-btn btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:4px 6px;">🇺🇸 EN</button>
     <button class="hud-btn" id="btnMesaMenu">
-      <span id="mesaNomeTopo">ESPAÇO</span> &#9662;
+      <span id="mesaNomeTopo">SPACE</span> &#9662;
     </button>
   </div>
   <div class="placar-mobile">
     <div class="placar-item">
-      <span class="placar-rot">PONTOS</span>
+      <span class="placar-rot" data-en="SCORE" data-pt="PONTOS">SCORE</span>
       <span class="placar-val" id="pontosV">0</span>
     </div>
     <div class="placar-item">
-      <span class="placar-rot">BOLAS</span>
+      <span class="placar-rot" data-en="BALLS" data-pt="BOLAS">BALLS</span>
       <span class="placar-val" id="bolasV">3</span>
     </div>
     <div class="placar-item">
-      <span class="placar-rot">BÔNUS</span>
+      <span class="placar-rot" data-en="BONUS" data-pt="BÔNUS">BONUS</span>
       <span class="placar-val" id="multV">x1</span>
     </div>
     <button class="hud-btn" id="btnSomTopo" style="padding:6px 8px;">🔊</button>
@@ -206,7 +207,7 @@
 
 <!-- Badges de defesas da mesa (Bola Salva e Kickback) -->
 <div id="hud-defesas">
-  <span class="pilula-defesa" id="mBallSave">SALVA 12s</span>
+  <span class="pilula-defesa" id="mBallSave" data-en="SAVE 12s" data-pt="SALVA 12s">SAVE 12s</span>
   <span class="pilula-defesa" id="mKickback">KICKBACK</span>
 </div>
 
@@ -223,12 +224,12 @@
     <!-- Botão 4: Tremer a Mesa (Nudge / Tilt real) -->
     <button class="btn-virtual" id="btnTremer">
       <i class="icone">📳</i>
-      <span class="legenda">TREMER</span>
+      <span class="legenda" data-en="NUDGE" data-pt="TREMER">NUDGE</span>
     </button>
     <!-- Botão 1: Flipper Esquerdo -->
     <button class="btn-virtual" id="btnFlipEsq">
       <i class="icone">&#9664;</i>
-      <span class="legenda">FLIP ESQ</span>
+      <span class="legenda" data-en="LEFT FLIP" data-pt="FLIP ESQ">LEFT FLIP</span>
     </button>
   </div>
 
@@ -237,31 +238,31 @@
     <!-- Botão 3: Jogar a Bola (Lançador / Plunger) -->
     <button class="btn-virtual" id="btnLancar">
       <i class="icone">🚀</i>
-      <span class="legenda">JOGAR BOLA</span>
+      <span class="legenda" data-en="LAUNCH" data-pt="JOGAR BOLA">LAUNCH</span>
     </button>
     <!-- Botão 2: Flipper Direito -->
     <button class="btn-virtual" id="btnFlipDir">
       <i class="icone">&#9654;</i>
-      <span class="legenda">FLIP DIR</span>
+      <span class="legenda" data-en="RIGHT FLIP" data-pt="FLIP DIR">RIGHT FLIP</span>
     </button>
   </div>
 </div>
 
 <!-- Overlay Menu de Mesas -->
 <div id="menuMesa" class="overlay">
-  <h1>PINBALL 3D<small>5 MESAS · CELULAR CHEIO</small></h1>
+  <h1 data-en="PINBALL 3D<small>5 TABLES · FULLSCREEN</small>" data-pt="PINBALL 3D<small>5 MESAS · CELULAR CHEIO</small>">PINBALL 3D<small>5 TABLES · FULLSCREEN</small></h1>
   <div id="listaMesas"></div>
-  <button id="botaoJogar">INICIAR JOGO</button>
-  <div style="font-size:clamp(9px, 1.5vh, 11px);color:#94a3b8;text-align:center;line-height:1.5;margin-top:2px;">
-    Use os 4 botões na parte inferior para jogar:<br>
-    <b>◄ / ►</b> Flippers &middot; <b>🚀</b> Jogar a Bola &middot; <b>📳</b> Tremer a Mesa
+  <button id="botaoJogar" data-en="START GAME" data-pt="INICIAR JOGO">START GAME</button>
+  <div style="font-size:clamp(9px, 1.5vh, 11px);color:#94a3b8;text-align:center;line-height:1.5;margin-top:2px;" data-en="Use the 4 bottom buttons to play:<br><b>◄ / ►</b> Flippers &middot; <b>🚀</b> Launch Ball &middot; <b>📳</b> Nudge Table" data-pt="Use os 4 botões na parte inferior para jogar:<br><b>◄ / ►</b> Flippers &middot; <b>🚀</b> Jogar a Bola &middot; <b>📳</b> Tremer a Mesa">
+    Use the 4 bottom buttons to play:<br>
+    <b>◄ / ►</b> Flippers &middot; <b>🚀</b> Launch Ball &middot; <b>📳</b> Nudge Table
   </div>
 </div>
 
 <!-- Overlay Fim de Jogo -->
 <div id="fimJogo" class="overlay oculto">
-  <h1 id="fimTitulo">FIM DE JOGO<small id="fimSub"></small></h1>
-  <button id="botaoJogar2">JOGAR DE NOVO</button>
+  <h1 id="fimTitulo">GAME OVER<small id="fimSub"></small></h1>
+  <button id="botaoJogar2" data-en="PLAY AGAIN" data-pt="JOGAR DE NOVO">PLAY AGAIN</button>
 </div>
 
 <script src="roteador.js"></script>
