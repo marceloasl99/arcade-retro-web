@@ -20,7 +20,10 @@
   }
 
   #app-mobile {
-    width:100%; max-width:430px; height:100dvh; height:100%;
+    width:100%; max-width:430px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0 auto; display:flex; flex-direction:column;
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
              env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -99,11 +102,11 @@
   }
 
   .btn-mov {
-    flex:1; height:64px; font-size:26px;
+    flex:1; height:clamp(48px, 8.5vh, 64px); font-size:clamp(20px, 4vh, 26px);
   }
 
   .btn-fogo {
-    flex:1 1 50%; height:64px; font-size:15px; letter-spacing:0.08em;
+    flex:1 1 50%; height:clamp(48px, 8.5vh, 64px); font-size:clamp(12px, 2.2vh, 15px); letter-spacing:0.08em;
     background:linear-gradient(180deg, #be123c, #881337);
     border-color:#fb7185; color:#fff1f2;
     box-shadow:0 4px 0 #4c0519, inset 0 1px 0 rgba(255,255,255,0.2);
@@ -138,6 +141,7 @@
     </div>
 
     <div class="acoes-topo">
+      <button class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:2px 5px;border-color:#38bdf8;color:#38bdf8;">⛶ FULL</button>
       <button class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:2px 5px;min-width:44px;">🇺🇸 EN</button>
       <button id="btn-som" class="btn-topo" type="button">🔊</button>
       <button id="btn-pausa" class="btn-topo" type="button">⏸</button>

@@ -11,7 +11,10 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
-    width:100vw; height:100dvh; height:100%;
+    width:100vw;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0; padding:0; overflow:hidden; position:fixed; inset:0;
     background:#03050c; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     color:#e0edff; touch-action:none; -webkit-user-select:none; user-select:none;
@@ -20,7 +23,11 @@
   }
 
   #app-mobile {
-    width:100%; height:100%; display:flex; flex-direction:column;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
+    display:flex; flex-direction:column;
     position:relative; overflow:hidden;
     background:radial-gradient(circle at 50% 40%, #0c1630 0%, #03050c 100%);
   }
@@ -83,8 +90,9 @@
 
   /* Estilo dos Botões Virtuais */
   .btn-virtual {
-    width:clamp(74px, 20vw, 96px); height:clamp(74px, 20vw, 96px);
-    border-radius:20px; border:2px solid rgba(56,189,248,0.4);
+    width:clamp(68px, 18vw, 92px); height:clamp(68px, 18vw, 92px);
+    max-height:clamp(58px, 13vh, 86px);
+    border-radius:18px; border:2px solid rgba(56,189,248,0.4);
     background:radial-gradient(circle at 35% 35%, rgba(14,35,70,0.9), rgba(6,14,32,0.96));
     backdrop-filter:blur(8px);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -179,6 +187,7 @@
       <span>&#128640;</span> SPACE CADET
     </div>
     <div class="hud-acoes">
+      <button class="hud-btn btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:3px 6px;">⛶ FULL</button>
       <button class="hud-btn btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:3px 6px;">🇺🇸 EN</button>
       <button class="hud-btn" id="btnSom">&#128266;</button>
       <button class="hud-btn" id="btnRestart">&#128260;</button>
@@ -367,6 +376,8 @@ function ajustarMesaMobile() {
 }
 
 window.addEventListener("resize", ajustarMesaMobile);
+window.addEventListener("orientationchange", function() { setTimeout(ajustarMesaMobile, 200); });
+if (window.visualViewport) window.visualViewport.addEventListener("resize", ajustarMesaMobile);
 window.addEventListener("load", ajustarMesaMobile);
 </script>
 

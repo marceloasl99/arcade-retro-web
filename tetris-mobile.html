@@ -21,7 +21,10 @@
   }
 
   #app {
-    position:relative; width:100vw; height:100vh;
+    position:relative; width:100vw;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     display:flex; flex-direction:row;          /* PAISAGEM: jogo a esquerda */
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
              env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -76,22 +79,36 @@
   #b-pausa.pausado .ic-play { display:block; }
 
   #voltar {
-    position:absolute; top:6px; left:8px; z-index:20;
-    font-size:12px; color:#9BBC0F; text-decoration:none; opacity:.55;
+    position:absolute; top:8px; left:8px; z-index:50;
+    font-size:12px; color:#9BBC0F; text-decoration:none; opacity:.75;
     padding:4px 6px;
   }
   #voltar:active { opacity:1; }
 
+  .acoes-topo {
+    position:absolute; top:8px; right:8px; z-index:50;
+    display:flex; gap:6px; align-items:center;
+  }
+  .btn-fullscreen-toggle {
+    font-size:11px; color:#9BBC0F; background:#16220c;
+    border:1px solid #9BBC0F; border-radius:4px; padding:3px 7px;
+    cursor:pointer; font-family:inherit; font-weight:bold; letter-spacing:0.5px;
+  }
+  .btn-fullscreen-toggle:active {
+    background:#9BBC0F; color:#16220c;
+  }
+
   #dica {
-    display:none; position:fixed; top:0; left:0; right:0; z-index:30;
-    padding:4px 8px; text-align:center; background:#16220c; color:#9BBC0F;
-    font-size:12px; font-weight:bold; border-bottom:1px solid #9BBC0F;
+    display:none; position:fixed; top:36px; left:0; right:0; z-index:30;
+    padding:3px 8px; text-align:center; background:rgba(22,34,12,0.95); color:#9BBC0F;
+    font-size:10px; font-weight:bold; border-bottom:1px solid rgba(155,188,15,0.4);
+    letter-spacing:0.5px;
   }
 
   /* RETRATO: jogo em cima, controles embaixo (o jogo e feito para paisagem) */
   @media (orientation: portrait) {
     #app { flex-direction:column; }
-    #palco { flex:1 1 auto; margin-top:22px; }
+    #palco { flex:1 1 auto; margin-top:54px; }
     #controles { padding-bottom:10px; }
     #dica { display:block; }
   }
@@ -100,7 +117,10 @@
 <body>
 <div id="app">
   <a id="voltar" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
-  <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="position:absolute;top:6px;right:8px;z-index:20;font-size:10px;color:#9BBC0F;background:transparent;border:1px solid #9BBC0F;border-radius:4px;padding:2px 5px;cursor:pointer;opacity:0.75;">🇺🇸 EN</button>
+  <div class="acoes-topo">
+    <button class="btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA">⛶ FULL</button>
+    <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="font-size:11px;color:#9BBC0F;background:transparent;border:1px solid #9BBC0F;border-radius:4px;padding:3px 6px;cursor:pointer;opacity:0.85;">🇺🇸 EN</button>
+  </div>
   <div id="palco"><canvas id="tela" width="160" height="144"></canvas></div>
 
   <div id="controles">

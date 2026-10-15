@@ -20,7 +20,10 @@
   }
 
   #app-mobile {
-    width:100%; max-width:440px; height:100dvh; height:100%;
+    width:100%; max-width:440px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0 auto; display:flex; flex-direction:column;
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
              env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -31,7 +34,7 @@
 
   /* ------------------- CABEÇALHO SUPERIOR ------------------- */
   #header-mobile {
-    flex:0 0 auto; height:46px; display:flex; align-items:center;
+    flex:0 0 auto; height:44px; display:flex; align-items:center;
     justify-content:space-between; padding:0 8px; width:100%;
     background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(250,204,21,0.25);
     z-index:20;
@@ -41,19 +44,27 @@
     letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
     flex-shrink:0;
   }
-  .info-bar { display:flex; gap:8px; font-size:10px; align-items:center; }
+  .info-bar { display:flex; gap:6px; font-size:10px; align-items:center; }
   .info-item { display:flex; flex-direction:column; align-items:center; }
   .info-rotulo { font-size:7px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase; }
   .info-val { font-weight:900; color:#facc15; font-size:11px; }
 
-  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .acoes-topo { display:flex; gap:4px; flex-shrink:0; align-items:center; }
   .btn-topo {
     background:#1e293b; border:1px solid #475569; border-radius:6px;
-    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
-    font-family:inherit; cursor:pointer; min-width:32px; height:30px;
+    color:#94a3b8; padding:3px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:28px; height:28px;
     display:flex; align-items:center; justify-content:center;
   }
   .btn-topo:active { background:#facc15; color:#020617; }
+  .btn-fullscreen-toggle {
+    color:#facc15 !important; border-color:rgba(250,204,21,0.5) !important;
+    font-size:9.5px !important; font-weight:800 !important; letter-spacing:0.04em !important;
+    padding:3px 6px !important; min-width:54px !important;
+  }
+  .btn-fullscreen-toggle.em-fullscreen {
+    background:rgba(239,68,68,0.2) !important; border-color:#ef4444 !important; color:#fca5a5 !important;
+  }
 
   /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
   #palco {
@@ -72,20 +83,21 @@
 
   /* ------------------- PAINEL DE CONTROLES TOUCH ------------------- */
   #controles-deck {
-    flex:0 0 auto; padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);
+    flex:0 0 auto; padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);
     display:flex; align-items:center; justify-content:center;
     background:rgba(15,23,42,0.96); border-top:1px solid rgba(250,204,21,0.25);
     z-index:20;
   }
 
-  /* D-PAD ERGONÔMICO 4 VIAS */
+  /* D-PAD ERGONÔMICO 4 VIAS COM ESCALA RESPONSIVA */
   .dpad-container {
-    width:150px; height:150px; position:relative; flex-shrink:0;
+    width:min(144px, 22vh); height:min(144px, 22vh);
+    position:relative; flex-shrink:0;
   }
   .dpad-btn {
-    position:absolute; width:48px; height:48px; background:linear-gradient(180deg, #1e293b, #0f172a);
+    position:absolute; width:33.3%; height:33.3%; background:linear-gradient(180deg, #1e293b, #0f172a);
     border:2px solid rgba(250,204,21,0.35); border-radius:10px; color:#facc15;
-    font-size:22px; display:flex; align-items:center; justify-content:center;
+    font-size:clamp(16px, 3vh, 22px); display:flex; align-items:center; justify-content:center;
     box-shadow:0 3px 0 #05070f; cursor:pointer; touch-action:none;
     transition:transform 0.05s, background 0.05s;
   }
@@ -93,10 +105,15 @@
     background:#eab308; color:#020617; transform:translateY(2px);
     box-shadow:0 1px 0 #05070f; border-color:#fef08a;
   }
-  #btn-up    { top:0; left:51px; }
-  #btn-down  { bottom:0; left:51px; }
-  #btn-left  { top:51px; left:0; }
-  #btn-right { top:51px; right:0; }
+  #btn-up    { top:0; left:33.3%; }
+  #btn-down  { bottom:0; left:33.3%; }
+  #btn-left  { top:33.3%; left:0; }
+  #btn-right { top:33.3%; right:0; }
+  .dpad-center {
+    position:absolute; top:33.3%; left:33.3%; width:33.3%; height:33.3%;
+    background:#0f172a; border-radius:6px; pointer-events:none;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
 
   /* BOTÃO PLAY / RESET CENTRAL */
   .dpad-center {
@@ -138,6 +155,7 @@
     </div>
 
     <div class="acoes-topo">
+      <button type="button" class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" title="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA">⛶ FULL</button>
       <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
       <button type="button" class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" title="Language">🇺🇸</button>
       <button type="button" class="btn-topo" id="btn-pausa" title="Pausa">⏸</button>

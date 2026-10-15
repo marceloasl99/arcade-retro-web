@@ -1,6 +1,6 @@
-# 🕹️ Retro Arcade Web Collection v2.1
+# 🕹️ Retro Arcade Web Collection v2.2
 
-[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
+[![Version](https://img.shields.io/badge/version-2.2.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Games](https://img.shields.io/badge/games-9%20classic%20titles-orange.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Tech](https://img.shields.io/badge/tech-HTML5%20%7C%20Canvas%20%7C%20WebAudio%20%7C%20Wasm-blue.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Platform](https://img.shields.io/badge/platform-Desktop%20%26%20Mobile-purple.svg)](https://github.com/marceloasl99/arcade-retro-web)
@@ -11,6 +11,24 @@ An authentic, zero-dependency browser collection of **9 classic retro arcade gam
 Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920×1080) with zero vertical scroll**.
 
 ![Retro Arcade Full HD Menu (English)](tela-menu-fhd-en.png)
+
+---
+
+## 🌟 What's New in Version 2.2
+
+* **Mobile Responsive Overhaul & Zero-Sway Navigation**:
+  * Fixed horizontal swaying and displacement on smartphone browsers (`index.html` enforced with strict `max-width: 100vw; overflow-x: hidden;`).
+  * Responsive header and telemetry bars with auto-wrapping, flexible cards, and break-word protection for long IPv6 addresses.
+* **Chrome Mobile Dynamic Viewport (`--app-height`)**:
+  * Solved the mobile Chrome address bar and navigation bar clipping issue using live `window.visualViewport.height` measurement.
+  * Virtual controls, touch decks, and game canvases now dynamically adapt to available height, guaranteeing zero control cut-offs.
+* **Universal Fullscreen Toggle (`⛶ FULL` / `🗗 EXIT`) on All 9 Mobile Games**:
+  * Added a prominent, retro-styled Fullscreen toggle button to the top header across all 9 mobile editions:
+    * **`⛶ FULL`** (English) / **`⛶ CHEIA`** (Portuguese) in normal mode.
+    * **`🗗 EXIT`** (English) / **`🗗 SAIR`** (Portuguese) when fullscreen is engaged.
+  * Cross-browser support (`requestFullscreen` / `exitFullscreen` with webkit, moz, and ms fallbacks).
+* **Ergonomic Touch Deck Scaling**:
+  * D-pads and action buttons converted to proportional height limits (`min(140px, 20vh)` / `clamp()`) to remain 100% accessible on portrait devices such as Samsung Galaxy S23+.
 
 ---
 

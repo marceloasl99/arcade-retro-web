@@ -20,7 +20,10 @@
   }
 
   #app-mobile {
-    width:100%; max-width:480px; height:100dvh; height:100%;
+    width:100%; max-width:480px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0 auto; display:flex; flex-direction:column;
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
              env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -101,23 +104,23 @@
   }
 
   .btn-fire {
-    flex:1; height:46px; background:linear-gradient(180deg, #ef4444, #991b1b);
-    border:2px solid #f87171; color:#fff; font-size:14px; font-weight:900;
+    flex:1; height:clamp(38px, 6.5vh, 46px); background:linear-gradient(180deg, #ef4444, #991b1b);
+    border:2px solid #f87171; color:#fff; font-size:clamp(12px, 2vh, 14px); font-weight:900;
   }
   .btn-fire:active, .btn-fire.pressed {
     background:#b91c1c; transform:translateY(2px);
   }
 
   .btn-thrust {
-    flex:1; height:46px; background:linear-gradient(180deg, #0284c7, #0369a1);
-    border:2px solid #38bdf8; color:#fff; font-size:13px; font-weight:900;
+    flex:1; height:clamp(38px, 6.5vh, 46px); background:linear-gradient(180deg, #0284c7, #0369a1);
+    border:2px solid #38bdf8; color:#fff; font-size:clamp(11px, 1.8vh, 13px); font-weight:900;
   }
   .btn-thrust:active, .btn-thrust.pressed {
     background:#075985; transform:translateY(2px);
   }
 
   .btn-smart {
-    flex:1; height:38px; background:#eab308; border:2px solid #facc15;
+    flex:1; height:clamp(32px, 5.5vh, 38px); background:#eab308; border:2px solid #facc15;
     color:#000; font-size:11px; font-weight:900; border-radius:8px;
   }
   .btn-smart:active, .btn-smart.pressed {
@@ -125,7 +128,7 @@
   }
 
   .btn-hyper {
-    flex:1; height:38px; background:#9333ea; border:2px solid #c084fc;
+    flex:1; height:clamp(32px, 5.5vh, 38px); background:#9333ea; border:2px solid #c084fc;
     color:#fff; font-size:11px; font-weight:900; border-radius:8px;
   }
   .btn-hyper:active, .btn-hyper.pressed {
@@ -163,8 +166,9 @@
     </div>
 
     <div class="acoes-topo">
-      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
+      <button type="button" class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:2px 5px;border-color:#ef4444;color:#ef4444;">⛶ FULL</button>
       <button type="button" class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" title="Language">🇺🇸</button>
+      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
       <button type="button" class="btn-topo" id="btn-pausa" title="Pausa">⏸</button>
     </div>
   </header>
@@ -238,6 +242,7 @@
 
   window.addEventListener("resize", redimensionarArenaMobile);
   window.addEventListener("orientationchange", redimensionarArenaMobile);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", redimensionarArenaMobile);
   setTimeout(redimensionarArenaMobile, 40);
   setTimeout(redimensionarArenaMobile, 200);
 

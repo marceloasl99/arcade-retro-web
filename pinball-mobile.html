@@ -11,7 +11,10 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
-    width:100vw; height:100dvh; height:100%;
+    width:100vw;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0; padding:0; overflow:hidden; position:fixed; inset:0;
     background:#05070d; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     color:#dfe9ff; touch-action:none; -webkit-user-select:none; user-select:none;
@@ -21,7 +24,10 @@
 
   /* Canvas 3D central ocupando a tela inteira */
   #tela {
-    display:block; width:100vw; height:100dvh;
+    display:block; width:100vw;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     object-fit:cover; position:absolute; inset:0; z-index:1;
   }
 
@@ -103,8 +109,9 @@
 
   /* Estilo dos Botões Virtuais */
   .btn-virtual {
-    width:clamp(82px, 22vw, 110px); height:clamp(82px, 22vw, 110px);
-    border-radius:24px; border:2px solid rgba(120,170,255,0.4);
+    width:clamp(74px, 20vw, 106px); height:clamp(74px, 20vw, 106px);
+    max-height:clamp(66px, 14.5vh, 100px);
+    border-radius:22px; border:2px solid rgba(120,170,255,0.4);
     background:radial-gradient(circle at 35% 35%, rgba(30,55,100,0.85), rgba(12,22,44,0.92));
     backdrop-filter:blur(8px);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -183,6 +190,7 @@
 <div id="hud-topo">
   <div style="display:flex;align-items:center;gap:6px;">
     <a class="hud-btn" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+    <button class="hud-btn btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:4px 6px;border-color:#38bdf8;color:#38bdf8;">⛶ FULL</button>
     <button class="hud-btn btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:4px 6px;">🇺🇸 EN</button>
     <button class="hud-btn" id="btnMesaMenu">
       <span id="mesaNomeTopo">SPACE</span> &#9662;

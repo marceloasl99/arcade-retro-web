@@ -20,7 +20,10 @@
   }
 
   #app-mobile {
-    width:100%; max-width:480px; height:100dvh; height:100%;
+    width:100%; max-width:480px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
     margin:0 auto; display:flex; flex-direction:column;
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
              env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -115,8 +118,9 @@
     </div>
 
     <div class="acoes-topo">
-      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
+      <button type="button" class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:2px 5px;border-color:#22c55e;color:#22c55e;">⛶ FULL</button>
       <button type="button" class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" title="Language">🇺🇸</button>
+      <button type="button" class="btn-topo" id="btn-som" title="Som">🔊</button>
       <button type="button" class="btn-topo" id="btn-pausa" title="Pausa">⏸</button>
     </div>
   </header>
@@ -174,6 +178,7 @@
 
   window.addEventListener("resize", redimensionarArenaMobile);
   window.addEventListener("orientationchange", redimensionarArenaMobile);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", redimensionarArenaMobile);
   setTimeout(redimensionarArenaMobile, 40);
   setTimeout(redimensionarArenaMobile, 200);
 

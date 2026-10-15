@@ -105,6 +105,80 @@
     return novo;
   }
 
+  /* ----------------------- TELA CHEIA (FULLSCREEN) ----------------------- */
+  function estaEmTelaCheia() {
+    try {
+      if (!raiz.document) return false;
+      return !!(
+        raiz.document.fullscreenElement ||
+        raiz.document.webkitFullscreenElement ||
+        raiz.document.mozFullScreenElement ||
+        raiz.document.msFullscreenElement
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function alternarTelaCheia() {
+    try {
+      var doc = raiz.document;
+      if (!doc) return;
+      if (!estaEmTelaCheia()) {
+        var el = doc.documentElement;
+        var rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (rfs) {
+          var p = rfs.call(el);
+          if (p && p.catch) p.catch(function () {});
+        }
+      } else {
+        var efs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+        if (efs) {
+          var p2 = efs.call(doc);
+          if (p2 && p2.catch) p2.catch(function () {});
+        }
+      }
+    } catch (err) {}
+  }
+
+  function atualizarAlturaReal() {
+    try {
+      if (!raiz.document) return;
+      var vh = raiz.innerHeight || 600;
+      if (raiz.visualViewport && raiz.visualViewport.height) {
+        vh = Math.min(vh, raiz.visualViewport.height);
+      }
+      raiz.document.documentElement.style.setProperty('--app-height', Math.round(vh) + 'px');
+    } catch (e) {}
+  }
+
+  function atualizarBotoesTelaCheia() {
+    try {
+      if (!raiz.document) return;
+      var fs = estaEmTelaCheia();
+      var lang = obterIdioma();
+      var txt = fs
+        ? (lang === 'en' ? '🗗 EXIT' : '🗗 SAIR')
+        : (lang === 'en' ? '⛶ FULL' : '⛶ CHEIA');
+      var btns = raiz.document.querySelectorAll('.btn-fullscreen-toggle');
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        b.innerHTML = txt;
+        b.setAttribute('aria-label', fs ? (lang === 'en' ? 'Exit Fullscreen' : 'Sair da Tela Cheia')
+                                       : (lang === 'en' ? 'Play in Fullscreen' : 'Jogar em Tela Cheia'));
+        b.classList.toggle('em-fullscreen', fs);
+      }
+      setTimeout(function () {
+        atualizarAlturaReal();
+        try { raiz.dispatchEvent(new Event('resize')); } catch (e) {}
+      }, 80);
+      setTimeout(function () {
+        atualizarAlturaReal();
+        try { raiz.dispatchEvent(new Event('resize')); } catch (e) {}
+      }, 300);
+    } catch (e) {}
+  }
+
   function aplicarIdiomaNoDOM(lang) {
     if (!lang) lang = obterIdioma();
     try {
@@ -123,15 +197,31 @@
         for (var j = 0; j < btns.length; j++) {
           btns[j].innerHTML = (lang === 'en' ? '🇺🇸 EN &middot; PT' : '🇧🇷 PT &middot; EN');
         }
+        atualizarBotoesTelaCheia();
       }
     } catch (e) {}
   }
 
   if (typeof raiz.document !== 'undefined') {
+    atualizarAlturaReal();
+    try {
+      raiz.addEventListener('resize', atualizarAlturaReal);
+      raiz.addEventListener('orientationchange', function () { setTimeout(atualizarAlturaReal, 200); });
+      if (raiz.visualViewport) raiz.visualViewport.addEventListener('resize', atualizarAlturaReal);
+
+      ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function (ev) {
+        raiz.document.addEventListener(ev, atualizarBotoesTelaCheia);
+      });
+    } catch (e) {}
+
     if (raiz.document.readyState === 'loading') {
-      raiz.document.addEventListener('DOMContentLoaded', function () { aplicarIdiomaNoDOM(); });
+      raiz.document.addEventListener('DOMContentLoaded', function () {
+        aplicarIdiomaNoDOM();
+        atualizarBotoesTelaCheia();
+      });
     } else {
       aplicarIdiomaNoDOM();
+      atualizarBotoesTelaCheia();
     }
   }
 
@@ -142,4 +232,8 @@
   raiz.definirIdioma = definirIdioma;
   raiz.alternarIdioma = alternarIdioma;
   raiz.aplicarIdiomaNoDOM = aplicarIdiomaNoDOM;
+  raiz.alternarTelaCheia = alternarTelaCheia;
+  raiz.estaEmTelaCheia = estaEmTelaCheia;
+  raiz.atualizarAlturaReal = atualizarAlturaReal;
+  raiz.atualizarBotoesTelaCheia = atualizarBotoesTelaCheia;
 })(typeof window !== "undefined" ? window : this);
