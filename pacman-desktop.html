@@ -212,7 +212,7 @@
     <div class="card-arcade">
       <div class="card-titulo">
         <span data-en="STATUS" data-pt="STATUS">STATUS</span>
-        <span style="color:#facc15;">MAZE-01</span>
+        <span style="color:#facc15;" id="hud-stage-badge">STAGE 1</span>
       </div>
       <div class="grid-stats">
         <div class="stat-box">
@@ -295,7 +295,7 @@
 
     <div class="viewport-gabinete" id="viewport-gabinete">
       <div id="arena-frame">
-        <canvas id="tela" width="560" height="720"></canvas>
+        <canvas id="tela" width="560" height="600"></canvas>
         <div class="crt-overlay"></div>
         <div class="reflexo-vidro"></div>
       </div>
@@ -348,10 +348,10 @@
         </div>
         <div class="linha-item">
           <div class="rotulo-item">
-            <span class="icone-tag" style="background:#991b1b; color:#fff;">🍒</span>
-            <span data-en="Cherry Fruit" data-pt="Cereja Bônus">Cherry Fruit</span>
+            <span class="icone-tag" id="hud-fruit-icon" style="background:#991b1b; color:#fff;">🍒</span>
+            <span id="hud-fruit-name" data-en="Cherry Fruit" data-pt="Cereja Bônus">Cherry Fruit</span>
           </div>
-          <div class="valor-item" style="color:#facc15;">100 PTS</div>
+          <div class="valor-item" id="hud-fruit-pts" style="color:#facc15;">100 PTS</div>
         </div>
       </div>
     </div>
@@ -419,6 +419,10 @@
   const hudLives = document.getElementById("hud-lives");
   const hudDots = document.getElementById("hud-dots");
   const hudHigh = document.getElementById("hud-high");
+  const hudStageBadge = document.getElementById("hud-stage-badge");
+  const hudFruitIcon = document.getElementById("hud-fruit-icon");
+  const hudFruitName = document.getElementById("hud-fruit-name");
+  const hudFruitPts = document.getElementById("hud-fruit-pts");
   const hallPlayer = document.getElementById("hall-player");
   const hallTop = document.getElementById("hall-top");
 
@@ -432,7 +436,7 @@
     const pad = 12;
     const maxW = Math.max(100, rect.width - pad);
     const maxH = Math.max(100, rect.height - pad);
-    const proporcao = 560 / 720; // 0.7778
+    const proporcao = 560 / 600; // Zero-deadspace 28x30 arcade grid
 
     let h = maxH;
     let w = h * proporcao;
@@ -467,6 +471,10 @@
       if (hudLives) hudLives.textContent = String(info.lives);
       if (hudDots) hudDots.textContent = String(info.dotsRemaining);
       if (hudHigh) hudHigh.textContent = String(info.highScore).padStart(6, "0");
+      if (hudStageBadge) hudStageBadge.textContent = `${info.stageName} • ${info.stageTheme}`;
+      if (hudFruitIcon) hudFruitIcon.textContent = info.fruitSymbol;
+      if (hudFruitName) hudFruitName.textContent = info.fruitName;
+      if (hudFruitPts) hudFruitPts.textContent = `${info.fruitPoints} PTS`;
       if (hallPlayer) hallPlayer.textContent = String(info.score).padStart(6, "0");
       if (hallTop && info.highScore > 33330) {
         hallTop.textContent = String(info.highScore).padStart(6, "0");

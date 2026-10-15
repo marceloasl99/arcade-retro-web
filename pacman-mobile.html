@@ -125,7 +125,7 @@
       </div>
       <div class="info-item">
         <span class="info-rotulo" data-en="LEVEL" data-pt="FASE">LEVEL</span>
-        <span class="info-val" id="hud-level" style="color:#38bdf8;">1</span>
+        <span class="info-val" style="color:#38bdf8;"><span id="hud-level">1</span> <span id="hud-fruit" style="font-size:12px;">🍒</span></span>
       </div>
       <div class="info-item">
         <span class="info-rotulo" data-en="LIVES" data-pt="VIDAS">LIVES</span>
@@ -147,7 +147,7 @@
   <!-- PALCO DO JOGO -->
   <main id="palco">
     <div id="arena-frame-mobile">
-      <canvas id="tela" width="560" height="720"></canvas>
+      <canvas id="tela" width="560" height="600"></canvas>
     </div>
   </main>
 
@@ -174,6 +174,7 @@
 
   const hudScore = document.getElementById("hud-score");
   const hudLevel = document.getElementById("hud-level");
+  const hudFruit = document.getElementById("hud-fruit");
   const hudLives = document.getElementById("hud-lives");
   const hudDots = document.getElementById("hud-dots");
 
@@ -185,7 +186,7 @@
     if (!palco || !arenaFrame) return;
     const wMax = palco.clientWidth - 8;
     const hMax = palco.clientHeight - 8;
-    const proporcao = 560 / 720;
+    const proporcao = 560 / 600; // Zero-deadspace 28x30 arcade grid
 
     let w = wMax;
     let h = w / proporcao;
@@ -208,6 +209,7 @@
     onHudUpdate: function (info) {
       if (hudScore) hudScore.textContent = String(info.score).padStart(6, "0");
       if (hudLevel) hudLevel.textContent = String(info.level);
+      if (hudFruit) hudFruit.textContent = info.fruitSymbol || "🍒";
       if (hudLives) hudLives.textContent = String(info.lives);
       if (hudDots) hudDots.textContent = String(info.dotsRemaining);
 

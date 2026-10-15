@@ -83,6 +83,42 @@
 
   var jogo = window.criarTetris(canvas, {});
 
+  var params = (typeof URLSearchParams !== 'undefined') ? new URLSearchParams(window.location.search) : null;
+  if (params && params.get('demo') === '1') {
+    jogo.acao('start');
+    if (jogo._teste) {
+      var t = [], tp = [];
+      for (var y = 0; y < 18; y++) {
+        var r = [], rp = [];
+        for (var x = 0; x < 10; x++) { r.push(0); rp.push(''); }
+        t.push(r); tp.push(rp);
+      }
+      var mapaDemo = [
+        { y: 17, x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], tipos: ['S','S','I','T','S','I','S','I','S','I'] },
+        { y: 16, x: [0, 1, 2, 3, 4, 5, 6, 7, 8],    tipos: ['S','S','I','T','S','I','S','I','S'] },
+        { y: 15, x: [0, 1, 2, 3, 4, 5, 6, 7],       tipos: ['S','S','I','T','S','I','S','I'] },
+        { y: 14, x: [0, 1, 2, 3, 5, 6, 7],          tipos: ['S','S','T','T','I','S','I'] },
+        { y: 13, x: [0, 1, 2, 5, 6],                tipos: ['S','S','T','I','S'] },
+        { y: 12, x: [0, 1, 2, 5],                   tipos: ['S','S','T','I'] },
+        { y: 11, x: [0, 2, 5],                      tipos: ['S','T','I'] },
+        { y: 10, x: [0, 5],                         tipos: ['S','S'] }
+      ];
+      mapaDemo.forEach(function (m) {
+        m.x.forEach(function (col, idx) {
+          t[m.y][col] = 1;
+          tp[m.y][col] = m.tipos[idx];
+        });
+      });
+      jogo._teste.definirTabuleiro(t, tp);
+      jogo._teste.definirPontos(137);
+      jogo._teste.definirLinhas(1);
+      jogo._teste.definirNivel(0);
+      jogo._teste.definirPeca(jogo._teste.fazerPeca('T', 4, 3));
+    }
+  } else if (params && params.get('autostart') === '1') {
+    jogo.acao('start');
+  }
+
   /* ------------------------- escala da tela do GB ------------------------- */
   function ajustar() {
     var ajuda = document.getElementById('ajuda');

@@ -1,6 +1,6 @@
-# 🕹️ Retro Arcade Web Collection v2.0
+# 🕹️ Retro Arcade Web Collection v2.1
 
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Games](https://img.shields.io/badge/games-9%20classic%20titles-orange.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Tech](https://img.shields.io/badge/tech-HTML5%20%7C%20Canvas%20%7C%20WebAudio%20%7C%20Wasm-blue.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Platform](https://img.shields.io/badge/platform-Desktop%20%26%20Mobile-purple.svg)](https://github.com/marceloasl99/arcade-retro-web)
@@ -14,14 +14,21 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 
 ---
 
-## 🌟 What's New in Version 2.0
+## 🌟 What's New in Version 2.1
 
-* **9 Complete Classic Games**: Expanded from the original 4 titles to 9 fully featured retro classics.
-* **Overhauled Penalty Kick Online**: Rebuilt with authentic high-resolution sprites, 2:1 widescreen pitch (1280×640), 7-frame spinning soccer ball, realistic 3D goalkeeper jumping parabolic arc with grounded pitch shadow, balanced save zones, and authentic audio sound effects.
-* **Full HD Zero-Scroll 3×3 Hub**: The entire collection of 9 games fits completely onto 1080p desktop and laptop screens with zero vertical scrolling needed.
-* **Complete Bilingual Support (EN / PT)**: Every game, menu, HUD telemetry, and rules card is localized in English by default with a live instant switch to Portuguese.
-* **Enhanced Physics & Sound**: Procedural Web Audio API synthesizers paired with real audio effects, Verlet sub-stepping, and SRS rotation matrices.
-* **Automated Test Suite**: Unit testing across all game engines and platform routing (`_selftest_*.js`).
+* **Game Boy DMG Authentic Tetris Overhaul**:
+  * Exact 160×144 resolution and 10:9 aspect ratio matching the 1989 Nintendo Game Boy DMG hardware.
+  * Flanking procedural brick walls (left `x=0..7` and dividing right wall `x=88..95`) with authentic mortar lines and DMG 4-shade green palette.
+  * Classic double-bordered rounded HUD boxes: `SCORE` (with double divider lines), `LEVEL`, `LINES`, and centered `NEXT` piece preview.
+  * Authentic tetromino textures: Greek key swirl (`T`), concentric window squares (`I`/`O`), beveled frames (`L`/`J`), and stippled dots (`S`/`Z`).
+* **Pac-Man Arcade Grid & Stage Progression Fixes**:
+  * Completely eliminated dead/unused grid borders with a precision 28-column × 30-row authentic maze layout.
+  * Seamless lateral tunnel wrap at rows 14–15 without clipping or obstruction.
+  * 10 distinct level progression stages with progressive speed curves and authentic bonus fruit icons: 🍒 Cherry (100 pts), 🍓 Strawberry (300 pts), 🍊 Orange (500 pts), 🍎 Apple (700 pts), 🍈 Melon (1000 pts), 🚀 Galaxian Flagship (2000 pts), 🔔 Bell (3000 pts), and 🗝️ Master Key (5000 pts).
+  * Authentic *Cruise Elroy* acceleration for Blinky as dots are consumed.
+* **Mobile Touch Enhancements**:
+  * Crisp integer-scaled rendering preserving exact pixel art ratios across all modern smartphones.
+  * Polished D-pad directional navigation on mobile.
 
 ---
 
@@ -56,10 +63,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 ---
 
 ### 2. Tetris
-* **Authentic 1989 Rules**: 7 standard tetrominoes, SRS wall-kick rotations, ghost piece projection, hold piece slot, next queue, progressive gravity drop, and line-clear combo scoring.
-* **Shared Engine**: Both desktop and mobile run from a unified engine (`tetris.js`).
-* **Desktop**: Side telemetry, high scores, level tracking, and customizable audio.
-* **Mobile**: Responsive touch buttons for left, right, soft drop, hard drop, rotate, and hold.
+* **Authentic 1989 Game Boy DMG Recreation**: Exact 160×144 LCD resolution, 10×18 well flanked by left and right procedural brick walls with authentic mortar lines.
+* **Classic DMG Interface**: Double-bordered rounded HUD compartments for `SCORE` (with horizontal dividers), `LEVEL`, `LINES`, and centered `NEXT` piece preview box.
+* **Piece Textures & Rules**: 4 authentic DMG piece textures (Greek key swirl for `T`, concentric squares for `I`/`O`, bevel for `L`/`J`, stipple dots for `S`/`Z`), authentic gravity drop curve, and classic Game Boy rotation (without modern wall kicks).
+* **Shared Engine**: Both desktop and mobile run from a unified engine (`tetris.js`) with instant DMG and Pocket palette switching and chiptune sound synthesis.
 
 | Desktop Cabinet | Mobile Fullscreen |
 | :---: | :---: |

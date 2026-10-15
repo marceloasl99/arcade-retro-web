@@ -117,13 +117,13 @@
     <!-- mover e descer -->
     <div class="linha">
       <button class="botao" id="b-esq" aria-label="Left">
-        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4 L5 12 L19 20 Z"/></svg>
       </button>
       <button class="botao" id="b-baixo" aria-label="Down">
-        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5 L12 19 L20 5 Z"/></svg>
       </button>
       <button class="botao" id="b-dir" aria-label="Right">
-        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4 L19 12 L5 20 Z"/></svg>
       </button>
     </div>
 
@@ -188,9 +188,46 @@
     aoMudarEstado: function () { sincronizar(); }
   });
 
+  var params = (typeof URLSearchParams !== 'undefined') ? new URLSearchParams(window.location.search) : null;
+  if (params && params.get('demo') === '1') {
+    jogo.acao('start');
+    if (jogo._teste) {
+      var t = [], tp = [];
+      for (var y = 0; y < 18; y++) {
+        var r = [], rp = [];
+        for (var x = 0; x < 10; x++) { r.push(0); rp.push(''); }
+        t.push(r); tp.push(rp);
+      }
+      var mapaDemo = [
+        { y: 17, x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], tipos: ['S','S','I','T','S','I','S','I','S','I'] },
+        { y: 16, x: [0, 1, 2, 3, 4, 5, 6, 7, 8],    tipos: ['S','S','I','T','S','I','S','I','S'] },
+        { y: 15, x: [0, 1, 2, 3, 4, 5, 6, 7],       tipos: ['S','S','I','T','S','I','S','I'] },
+        { y: 14, x: [0, 1, 2, 3, 5, 6, 7],          tipos: ['S','S','T','T','I','S','I'] },
+        { y: 13, x: [0, 1, 2, 5, 6],                tipos: ['S','S','T','I','S'] },
+        { y: 12, x: [0, 1, 2, 5],                   tipos: ['S','S','T','I'] },
+        { y: 11, x: [0, 2, 5],                      tipos: ['S','T','I'] },
+        { y: 10, x: [0, 5],                         tipos: ['S','S'] }
+      ];
+      mapaDemo.forEach(function (m) {
+        m.x.forEach(function (col, idx) {
+          t[m.y][col] = 1;
+          tp[m.y][col] = m.tipos[idx];
+        });
+      });
+      jogo._teste.definirTabuleiro(t, tp);
+      jogo._teste.definirPontos(137);
+      jogo._teste.definirLinhas(1);
+      jogo._teste.definirNivel(0);
+      jogo._teste.definirPeca(jogo._teste.fazerPeca('T', 4, 3));
+    }
+  } else if (params && params.get('autostart') === '1') {
+    jogo.acao('start');
+  }
+
   /* ------------------------------- layout -------------------------------- */
   function ajustar() {
-    var vw = window.innerWidth, vh = window.innerHeight;
+    var vw = window.innerWidth || document.documentElement.clientWidth || 360;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 640;
     var paisagem = vw >= vh;
     var k;
 
@@ -199,10 +236,18 @@
     k = Math.max(42, Math.min(k, 108));
     document.documentElement.style.setProperty('--k', Math.round(k) + 'px');
 
-    // a tela do Game Boy ocupa o espaco que sobra, com uma folga nas bordas
-    var bw = palco.clientWidth || Math.round(vw * 0.6);
-    var bh = palco.clientHeight || Math.round(vh * 0.6);
-    var s = Math.min((bw - 14) / 160, (bh - 14) / 144);
+    var dispW, dispH;
+    if (paisagem) {
+      var largControles = Math.round(k * 2.4 + 32);
+      dispW = Math.max(80, vw - largControles);
+      dispH = vh - 16;
+    } else {
+      var altControles = Math.round(k * 3.3 + 40);
+      dispW = vw - 16;
+      dispH = Math.max(80, vh - altControles);
+    }
+
+    var s = Math.min(dispW / 160, dispH / 144);
     if (!(s > 0)) s = 1;
     var si = Math.floor(s);
     if (si >= 1 && (s - si) < 0.25) s = si;

@@ -1,27 +1,37 @@
 /* ============================================================================
-   TETRIS — Game Boy (DMG) — MOTOR COMPARTILHADO
+   TETRIS — Game Boy (DMG 1989) — MOTOR COMPARTILHADO COM DIVISÓRIAS AUTÊNTICAS
    ----------------------------------------------------------------------------
-   Recria o Tetris do Game Boy classico:
-     - tela real do Game Boy: 160 x 144 pixels, 4 tons (verde DMG)
-     - tabuleiro de 10 x 18 blocos de 8 x 8 pixels (ocupa a altura toda)
-     - painel a direita com a proxima peca, pontos, linhas e nivel
-     - 7 pecas, giro horario (A) e anti-horario (B), SEM "wall kick"
-     - peca trava no passo da gravidade (sem tempo extra de encaixe)
-     - queda suave descendo a peca mais rapido, 1 ponto por linha
-     - pontos: 1=40, 2=100, 3=300, 4=1200, multiplicado por (nivel+1)
-     - nivel sobe a cada 10 linhas (tabela de velocidade do Game Boy)
-     - musica da carrocinha (Korobeiniki, melodia popular) em onda quadrada
-   Este arquivo e usado pelas duas versoes (computador e celular), garantindo
-   que o jogo seja exatamente o mesmo nas duas.
+   Recria fielmente o Tetris clássico do Nintendo Game Boy:
+     - Tela real do Game Boy: 160 x 144 pixels, 4 tons (verde DMG)
+     - Paredes divisórias de tijolos:
+         * Coluna de tijolos na esquerda (x = 0..7, 8px)
+         * Coluna de tijolos divisória na direita (x = 88..95, 8px)
+     - Tabuleiro autêntico: 10 colunas x 18 linhas de 8x8 pixels (x = 8..87, 80px)
+     - Painel HUD à direita (x = 96..159, 64px) com caixas de borda dupla arredondada:
+         * Caixa SCORE no topo com compartimento duplo de pontuação
+         * Caixa LEVEL no meio com número do nível
+         * Caixa LINES abaixo do nível com contagem de linhas
+         * Caixa NEXT na parte inferior com preview centralizado da próxima peça
+     - Texturas autênticas de blocos:
+         * Espiral grego / labyrinth ('T')
+         * Janela concêntrica ('I', 'O')
+         * Janela com relevo ('L', 'J')
+         * Textura pontilhada/stipple ('S', 'Z')
+     - 7 peças clássicas, sem "wall kick", giro A (horário) e B (anti-horário)
+     - Tabela de velocidade da gravidade original do Game Boy
+     - Trilha sonora procedural chiptune (Korobeiniki) em onda quadrada e triângulo
    ============================================================================ */
 (function (raiz) {
   "use strict";
 
-  /* --------------------------- dimensoes / paleta ------------------------- */
-  var TELA_L = 160, TELA_A = 144;   // resolucao real da tela do Game Boy
+  /* --------------------------- dimensões / paleta ------------------------- */
+  var TELA_L = 160, TELA_A = 144;   // resolução real da tela do Game Boy
+  var OFFSET_X = 8;                 // onde começa o tabuleiro após a parede esquerda
   var LARG = 10, ALT = 18;          // tabuleiro: 10 colunas x 18 linhas
   var TAM = 8;                      // tamanho do bloco em pixels
-  var PAINEL_X = 80;                // onde comeca o painel da direita
+  var WELL_W = LARG * TAM;          // 80 pixels de largura útil do tabuleiro (8..87)
+  var PAREDE_DIR_X = 88;            // parede divisória de tijolos da direita (88..95)
+  var PAINEL_X = 96;                // onde começa o painel da direita (96..159, 64px)
 
   // 4 tons do Game Boy (0 = mais claro/fundo, 3 = mais escuro/tinta)
   var PALETAS = [
@@ -75,8 +85,8 @@
     '<': ['00001','00010','00100','01000','00100','00010','00001']
   };
 
-  /* -------------------------------- pecas -------------------------------- */
-  // matriz 4x4 (4 linhas de 4 caracteres). Nascem alinhadas a esquerda.
+  /* -------------------------------- peças -------------------------------- */
+  // matriz 4x4 (4 linhas de 4 caracteres). Nascem alinhadas à esquerda.
   var FORMAS = {
     I: ['0000','1111','0000','0000'],
     O: ['0110','0110','0000','0000'],
@@ -94,14 +104,12 @@
 
   var PONTOS_LINHA = [0, 40, 100, 300, 1200];
 
-  // tempo (ms) entre descidas automaticas
   function intervaloQueda(nivel) {
     var q = GRAVIDADE[Math.min(nivel, NIVEL_MAX)];
     return q * 1000 / 60;
   }
 
-  /* ------------------------------- musica -------------------------------- */
-  // Korobeiniki (melodia popular russa, dominio publico), em colcheias
+  /* ------------------------------- música -------------------------------- */
   var MELODIA = [
     [76,4],[71,2],[72,2],  [74,4],[72,2],[71,2],  [69,4],[69,2],[72,2],  [76,4],[74,2],[72,2],
     [71,6],[72,2],         [74,4],[76,4],         [72,4],[69,4],         [69,4],[0,4],
@@ -109,7 +117,7 @@
     [71,4],[71,2],[72,2],  [74,4],[76,4],         [72,4],[69,4],         [69,4],[0,4]
   ];
   var BAIXO_RAIZES = [45,45,45,45,40,45,45,45,50,50,45,45,40,45,45,45];
-  var COLCH = 158;   // duracao de uma colcheia em ms
+  var COLCH = 158;
 
   /* ============================== o jogo ================================== */
   function criarTetris(canvas, opcoes) {
@@ -118,11 +126,11 @@
     ctx.imageSmoothingEnabled = false;
 
     var aoMudarEstado = opcoes.aoMudarEstado || function () {};
-    var TAM_AVISO = opcoes.avisoDura ?? 0;
 
     /* ------------------------------ estado -------------------------------- */
     var estado = 'titulo';         // titulo | jogando | limpando | pausado | fim
     var tabuleiro = [];
+    var tabuleiroPadroes = [];     // armazena o tipo ('T', 'I', 'O', etc.) de cada bloco fixo
     var peca = null, proxima = null;
     var sacoPeca = [];
     var nivel = 0, nivelInicial = 0, linhas = 0, pontos = 0;
@@ -143,7 +151,7 @@
 
     try { topo = parseInt(localStorage.getItem('tetris.gb.top') || '0', 10) || 0; } catch (e) { topo = 0; }
 
-    /* ------------------------------- audio -------------------------------- */
+    /* ------------------------------- áudio -------------------------------- */
     var ac = null, destino = null;
     function garantirAudio() {
       if (ac) return ac;
@@ -213,7 +221,7 @@
     function tons() { return PALETAS[paleta].tons; }
     function px(x, y, l, a, tom) {
       ctx.fillStyle = tons()[tom];
-      ctx.fillRect(x, y, l, a);
+      ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(l), Math.floor(a));
     }
     function texto(str, x, y, tom, escala) {
       escala = escala || 1;
@@ -234,10 +242,10 @@
       escala = escala || 1;
       texto(str, Math.round((TELA_L - larguraTexto(str, escala)) / 2), y, tom, escala);
     }
-    function textoPainel(str, y, tom, escala) {
+    function textoTabuleiroCentro(str, y, tom, escala) {
       escala = escala || 1;
       var larg = larguraTexto(str, escala);
-      var x = Math.round(PAINEL_X + (TELA_L - PAINEL_X - larg) / 2);
+      var x = Math.round(OFFSET_X + (WELL_W - larg) / 2);
       texto(str, x, y, tom, escala);
     }
     function preencher(num, casas) {
@@ -246,7 +254,7 @@
       return s;
     }
 
-    /* -------------------------------- pecas ------------------------------- */
+    /* -------------------------------- peças ------------------------------- */
     function sortearPeca() {
       if (sacoPeca.length === 0) {
         sacoPeca = TIPOS.slice();
@@ -265,9 +273,6 @@
       m[y] = linha.substring(0, x) + '1' + linha.substring(x + 1);
     }
     function girarMatriz(m, sentido) {
-      // marcar(m, coluna, linha): a celula (linha y, coluna x) vai para
-      //   horario:      (linha x, coluna 3-y)
-      //   anti-horario: (linha 3-x, coluna y)
       var r = ['0000', '0000', '0000', '0000'];
       for (var y = 0; y < 4; y++) {
         for (var x = 0; x < 4; x++) {
@@ -302,9 +307,9 @@
     }
     function girar(sentido) {
       if (estado !== 'jogando' || !peca) return;
-      if (peca.tipo === 'O') return;                      // o quadrado nao gira
+      if (peca.tipo === 'O') return;
       var m = girarMatriz(peca.m, sentido);
-      if (!colide(m, peca.x, peca.y)) {                   // sem "wall kick"
+      if (!colide(m, peca.x, peca.y)) {
         peca.m = m;
         somEfeito('girar');
       }
@@ -313,19 +318,27 @@
     /* ------------------------------- tabuleiro ---------------------------- */
     function limparTabuleiro() {
       tabuleiro = [];
+      tabuleiroPadroes = [];
       for (var y = 0; y < ALT; y++) {
         var linha = [];
-        for (var x = 0; x < LARG; x++) linha.push(0);
+        var linhaPadrao = [];
+        for (var x = 0; x < LARG; x++) {
+          linha.push(0);
+          linhaPadrao.push('');
+        }
         tabuleiro.push(linha);
+        tabuleiroPadroes.push(linhaPadrao);
       }
     }
     function travar() {
-      var completa = false;
       for (var y = 0; y < 4; y++) {
         for (var x = 0; x < 4; x++) {
           if (peca.m[y].charAt(x) !== '1') continue;
           var by = peca.y + y, bx = peca.x + x;
-          if (by >= 0 && by < ALT && bx >= 0 && bx < LARG) tabuleiro[by][bx] = 1;
+          if (by >= 0 && by < ALT && bx >= 0 && bx < LARG) {
+            tabuleiro[by][bx] = 1;
+            tabuleiroPadroes[by][bx] = peca.tipo;
+          }
         }
       }
       somEfeito('travar');
@@ -348,14 +361,19 @@
     }
     function concluirLimpeza() {
       var n = limpandoLinhas.length;
-      // remove as linhas cheias e desce o resto
       for (var i = 0; i < limpandoLinhas.length; i++) {
         tabuleiro.splice(limpandoLinhas[i], 1);
+        tabuleiroPadroes.splice(limpandoLinhas[i], 1);
       }
       for (var k = 0; k < n; k++) {
         var vazia = [];
-        for (var x = 0; x < LARG; x++) vazia.push(0);
+        var vaziaP = [];
+        for (var x = 0; x < LARG; x++) {
+          vazia.push(0);
+          vaziaP.push('');
+        }
         tabuleiro.unshift(vazia);
+        tabuleiroPadroes.unshift(vaziaP);
       }
       linhas += n;
       pontos += PONTOS_LINHA[n] * (nivel + 1);
@@ -387,7 +405,7 @@
       }
     }
 
-    /* -------------------------------- acoes ------------------------------- */
+    /* -------------------------------- ações ------------------------------- */
     function comecar() {
       limparTabuleiro();
       nivel = nivelInicial;
@@ -445,37 +463,130 @@
       }
     }
 
-    /* ------------------------------- desenho ------------------------------ */
-    function desenharBloco(bx, by, tom) {
-      px(bx * TAM, by * TAM, TAM, TAM, tom);
+    /* ------------------------- desenho autêntico GB ----------------------- */
+
+    // Desenha parede de tijolos Game Boy (coluna de 8px de largura)
+    function desenharParedesTijolos() {
+      [0, PAREDE_DIR_X].forEach(function (ox) {
+        for (var y = 0; y < TELA_A; y += 4) {
+          var par = (y % 8 === 0);
+          px(ox, y, TAM, 4, 1);
+          px(ox, y + 3, TAM, 1, 3); // junta horizontal inferior
+          px(ox, y, TAM, 1, 0);     // brilho superior
+
+          if (par) {
+            px(ox + 7, y, 1, 4, 3); // junta vertical direita
+            px(ox + 2, y + 1, 1, 1, 2);
+            px(ox + 5, y + 2, 1, 1, 2);
+          } else {
+            px(ox + 3, y, 1, 4, 3); // junta vertical central
+            px(ox + 7, y, 1, 4, 3); // junta vertical direita
+            px(ox + 1, y + 2, 1, 1, 2);
+            px(ox + 5, y + 1, 1, 1, 2);
+          }
+        }
+      });
     }
-    function desenharTabuleiro() {
-      px(0, 0, PAINEL_X, TELA_A, 0);
-      for (var y = 0; y < ALT; y++) {
-        for (var x = 0; x < LARG; x++) {
-          if (tabuleiro[y][x]) desenharBloco(x, y, 3);
+
+    // Desenha caixa com borda dupla e cantos arredondados clássica do Game Boy
+    function desenharCaixaGB(x, y, w, h) {
+      // Borda externa com cantos chanfrados
+      px(x + 2, y, w - 4, 1, 3);
+      px(x + 2, y + h - 1, w - 4, 1, 3);
+      px(x, y + 2, 1, h - 4, 3);
+      px(x + w - 1, y + 2, 1, h - 4, 3);
+      px(x + 1, y + 1, 1, 1, 3);
+      px(x + w - 2, y + 1, 1, 1, 3);
+      px(x + 1, y + h - 2, 1, 1, 3);
+      px(x + w - 2, y + h - 2, 1, 1, 3);
+
+      // Borda interna com 1px de folga
+      px(x + 4, y + 2, w - 8, 1, 3);
+      px(x + 4, y + h - 3, w - 8, 1, 3);
+      px(x + 2, y + 4, 1, h - 8, 3);
+      px(x + w - 3, y + 4, 1, h - 8, 3);
+      px(x + 3, y + 3, 1, 1, 3);
+      px(x + w - 4, y + 3, 1, 1, 3);
+      px(x + 3, y + h - 4, 1, 1, 3);
+      px(x + w - 4, y + h - 4, 1, 1, 3);
+    }
+
+    // Renderiza cada bloco de 8x8 pixels com a textura real do Game Boy
+    function desenharBlocoPixel(px0, py0, tipo) {
+      // Moldura externa escura (tom 3)
+      px(px0, py0, TAM, TAM, 3);
+      px(px0 + 1, py0 + 1, 6, 6, 0);
+
+      if (tipo === 'T') {
+        // Padrão espiral grego / labyrinth (peça T)
+        var swirl = [
+          '000000',
+          '011110',
+          '010010',
+          '010110',
+          '010000',
+          '011111'
+        ];
+        for (var r = 0; r < 6; r++) {
+          for (var c = 0; c < 6; c++) {
+            if (swirl[r].charAt(c) === '1') px(px0 + 1 + c, py0 + 1 + r, 1, 1, 3);
+          }
+        }
+      } else if (tipo === 'I' || tipo === 'O') {
+        // Padrão janela concêntrica (quadrado dentro de quadrado)
+        px(px0 + 2, py0 + 2, 4, 4, 3);
+        px(px0 + 3, py0 + 3, 2, 2, 0);
+      } else if (tipo === 'L' || tipo === 'J') {
+        // Padrão janela com núcleo sólido/relevo
+        px(px0 + 2, py0 + 2, 4, 4, 2);
+        px(px0 + 3, py0 + 3, 2, 2, 3);
+      } else {
+        // Peças S, Z: Textura pontilhada/stipple autêntica
+        for (var r2 = 0; r2 < 6; r2++) {
+          for (var c2 = 0; c2 < 6; c2++) {
+            if ((r2 + c2) % 2 === 0) px(px0 + 1 + c2, py0 + 1 + r2, 1, 1, 2);
+          }
         }
       }
-      // linha divisoria do painel
-      px(PAINEL_X, 0, 1, TELA_A, 3);
     }
+
+    function desenharBloco(bx, by, tipo) {
+      var px0 = OFFSET_X + bx * TAM;
+      var py0 = by * TAM;
+      desenharBlocoPixel(px0, py0, tipo || 'T');
+    }
+
+    function desenharTabuleiro() {
+      // Limpa área do tabuleiro (x = 8..87)
+      px(OFFSET_X, 0, WELL_W, TELA_A, 0);
+
+      // Desenha blocos fixos com suas respectivas texturas
+      for (var y = 0; y < ALT; y++) {
+        for (var x = 0; x < LARG; x++) {
+          if (tabuleiro[y][x]) {
+            desenharBloco(x, y, tabuleiroPadroes[y][x]);
+          }
+        }
+      }
+
+      // Desenha paredes de tijolos na esquerda e na divisória da direita
+      desenharParedesTijolos();
+    }
+
     function desenharPeca() {
       if (!peca) return;
       for (var y = 0; y < 4; y++) {
         for (var x = 0; x < 4; x++) {
-          if (peca.m[y].charAt(x) === '1') desenharBloco(peca.x + x, peca.y + y, 3);
+          if (peca.m[y].charAt(x) === '1') {
+            desenharBloco(peca.x + x, peca.y + y, peca.tipo);
+          }
         }
       }
     }
+
     function desenharProxima() {
-      // caixa da proxima peca
-      var cx = PAINEL_X + 20, cy = 6, tam = 40;
-      px(cx, cy, tam, tam, 0);
-      px(cx, cy, tam, 1, 3); px(cx, cy + tam - 1, tam, 1, 3);
-      px(cx, cy, 1, tam, 3); px(cx + tam - 1, cy, 1, tam, 3);
       if (!proxima) return;
       var m = proxima.m;
-      // limites da peca para centralizar
       var minX = 9, maxX = -1, minY = 9, maxY = -1;
       for (var y = 0; y < 4; y++) {
         for (var x = 0; x < 4; x++) {
@@ -486,39 +597,66 @@
         }
       }
       var largP = (maxX - minX + 1) * TAM, altP = (maxY - minY + 1) * TAM;
-      var ox = cx + Math.round((tam - largP) / 2);
-      var oy = cy + Math.round((tam - altP) / 2);
+      // Centraliza na caixa NEXT (x = 109, y = 99, w = 45, h = 40)
+      var ox = 109 + Math.round((45 - largP) / 2);
+      var oy = 99 + Math.round((40 - altP) / 2);
       for (var y2 = 0; y2 < 4; y2++) {
         for (var x2 = 0; x2 < 4; x2++) {
-          if (m[y2].charAt(x2) === '1') px(ox + (x2 - minX) * TAM, oy + (y2 - minY) * TAM, TAM, TAM, 3);
+          if (m[y2].charAt(x2) === '1') {
+            desenharBlocoPixel(ox + (x2 - minX) * TAM, oy + (y2 - minY) * TAM, proxima.tipo);
+          }
         }
       }
     }
-    function desenharPainel() {
-      px(PAINEL_X, 0, TELA_L - PAINEL_X, TELA_A, 0);
-      desenharProxima();
 
-      textoPainel('SCORE', 54, 3, 1);
-      textoPainel(preencher(pontos, 6), 63, 3, 1);
-      textoPainel('LINES', 84, 3, 1);
-      textoPainel(preencher(linhas, 3), 93, 3, 1);
-      textoPainel('LEVEL', 114, 3, 1);
-      textoPainel(preencher(nivel, 2), 123, 3, 1);
+    function desenharPainel() {
+      // Fundo limpo do painel (x = 96..159)
+      px(PAINEL_X, 0, TELA_L - PAINEL_X, TELA_A, 0);
+
+      // 1. Caixa SCORE no topo: x = 101, y = 5, w = 53, h = 14
+      desenharCaixaGB(101, 5, 53, 14);
+      texto('SCORE', 113, 9, 3);
+      // Divisórias horizontais do compartimento de pontuação
+      px(101, 21, 53, 1, 3);
+      px(101, 23, 53, 1, 3);
+      px(101, 33, 53, 1, 3);
+      px(101, 35, 53, 1, 3);
+      var sScore = String(pontos);
+      var xScore = 150 - larguraTexto(sScore, 1);
+      texto(sScore, xScore, 25, 3);
+
+      // 2. Caixa LEVEL no meio: x = 101, y = 45, w = 53, h = 23
+      desenharCaixaGB(101, 45, 53, 23);
+      texto('LEVEL', 113, 49, 3);
+      var sNivel = String(nivel);
+      var xNivel = 148 - larguraTexto(sNivel, 1);
+      texto(sNivel, xNivel, 58, 3);
+
+      // 3. Caixa LINES abaixo do level: x = 101, y = 71, w = 53, h = 23
+      desenharCaixaGB(101, 71, 53, 23);
+      texto('LINES', 113, 75, 3);
+      var sLinhas = String(linhas);
+      var xLinhas = 148 - larguraTexto(sLinhas, 1);
+      texto(sLinhas, xLinhas, 84, 3);
+
+      // 4. Caixa NEXT na parte inferior: x = 109, y = 99, w = 45, h = 40
+      desenharCaixaGB(109, 99, 45, 40);
+      desenharProxima();
     }
+
     function desenharBarraTitulo() {
-      // tirinha decorativa de blocos sob o titulo
       var blocos = [0x0F, 0x02, 0x0F, 0x06, 0x04, 0x0F, 0x08];
       for (var i = 0; i < blocos.length; i++) {
         px(40 + i * 12, 40, 10, 10, i % 2 ? 3 : 2);
       }
     }
+
     function desenharTitulo() {
       px(0, 0, TELA_L, TELA_A, 0);
       textoCentro('TETRIS', 14, 3, 2);
       desenharBarraTitulo();
       textoCentro('LEVEL', 64, 3, 1);
       textoCentro(preencher(nivelInicial, 2), 76, 3, 2);
-      // setinhas de escolha do nivel
       var piscando = Math.floor(piscaTempo / 350) % 2 === 0;
       if (piscando) {
         px(54, 80, 4, 8, 3); px(58, 78, 2, 12, 3);
@@ -527,23 +665,23 @@
       textoCentro('TOP ' + preencher(topo, 6), 100, 3, 1);
       if (Math.floor(piscaTempo / 500) % 2 === 0) textoCentro('PRESSIONE ENTER', 126, 3, 1);
     }
+
     function desenharPausa() {
-      px(0, 0, PAINEL_X, TELA_A, 0);
-      texto('PAUSE', 14, 62, 3, 2);
-      px(PAINEL_X, 0, 1, TELA_A, 3);
+      px(OFFSET_X, 0, WELL_W, TELA_A, 0);
+      textoTabuleiroCentro('PAUSE', 62, 3, 2);
     }
+
     function desenharFim() {
-      px(0, 0, PAINEL_X, TELA_A, 0);
-      texto('GAME', 18, 50, 3, 2);
-      texto('OVER', 18, 68, 3, 2);
-      var e = 'SCORE ' + preencher(pontos, 6);
-      texto(e, Math.round((PAINEL_X - larguraTexto(e, 1)) / 2), 96, 3, 1);
+      px(OFFSET_X, 0, WELL_W, TELA_A, 0);
+      textoTabuleiroCentro('GAME', 46, 3, 2);
+      textoTabuleiroCentro('OVER', 66, 3, 2);
+      var e = 'SCORE ' + pontos;
+      textoTabuleiroCentro(e, 94, 3, 1);
       if (Math.floor(piscaTempo / 500) % 2 === 0) {
-        var d = 'ENTER';
-        texto(d, Math.round((PAINEL_X - larguraTexto(d, 1)) / 2), 120, 3, 1);
+        textoTabuleiroCentro('ENTER', 118, 3, 1);
       }
-      px(PAINEL_X, 0, 1, TELA_A, 3);
     }
+
     function desenhar() {
       var t = tons();
       ctx.fillStyle = t[0];
@@ -558,11 +696,11 @@
         var fasePisca = Math.floor(limpandoTempo / 45) % 2 === 0;
         for (var i = 0; i < limpandoLinhas.length; i++) {
           var ly = limpandoLinhas[i];
-          if (fasePisca) px(0, ly * TAM, PAINEL_X, TAM, 3);
+          if (fasePisca) px(OFFSET_X, ly * TAM, WELL_W, TAM, 3);
         }
       } else {
         for (var j = 0; j < limpandoLinhas.length; j++) {
-          px(0, limpandoLinhas[j] * TAM, PAINEL_X, TAM, 3);
+          px(OFFSET_X, limpandoLinhas[j] * TAM, WELL_W, TAM, 3);
         }
         desenharPeca();
       }
@@ -571,14 +709,13 @@
       if (estado === 'fim') desenharFim();
     }
 
-    /* -------------------------------- laco -------------------------------- */
+    /* -------------------------------- laço -------------------------------- */
     function atualizar(agora, dt) {
       piscaTempo += dt;
 
       if (estado === 'jogando') {
         musicaBombear(agora);
 
-        // ---- movimento lateral com repeticao (DAS) ----
         var dir = 0;
         if (entrada.esquerda && !entrada.direita) dir = -1;
         else if (entrada.direita && !entrada.esquerda) dir = 1;
@@ -596,7 +733,6 @@
           dasTempo = 0;
         }
 
-        // ---- descida ----
         var passo = entrada.baixo ? QUEDA_SUAVE : quedaIntervalo;
         quedaAcum += dt;
         var guarda = 0;
@@ -607,7 +743,7 @@
           if (entrada.baixo) {
             if (colide(peca.m, peca.x, peca.y + 1)) { travar(); break; }
             peca.y++;
-            pontos += 1;                     // queda suave vale 1 ponto por linha
+            pontos += 1;
           } else {
             if (!descer()) break;
           }
@@ -645,22 +781,30 @@
                  paletaNome: PALETAS[paleta].nome };
       },
       iniciar: function () { raiz.requestAnimationFrame(quadro); },
-      // para os testes: avanca o jogo sem depender do navegador
       _passo: function (ms) { atualizar(ultimoQuadro + ms, ms); ultimoQuadro += ms; },
-      // ganchos de inspecao usados pelos testes automatizados
       _teste: {
         tabuleiro: function () { return tabuleiro; },
         peca: function () { return peca; },
         proxima: function () { return proxima; },
         nivel: function () { return nivel; },
-        definirTabuleiro: function (t) { tabuleiro = t; },
+        definirTabuleiro: function (t, padroes) {
+          tabuleiro = t;
+          tabuleiroPadroes = [];
+          for (var y = 0; y < ALT; y++) {
+            var lp = [];
+            for (var x = 0; x < LARG; x++) {
+              var pat = (padroes && padroes[y] && padroes[y][x]) ? padroes[y][x] : (typeof t[y][x] === 'string' ? t[y][x] : (t[y] && t[y][x] ? 'T' : ''));
+              lp.push(pat);
+            }
+            tabuleiroPadroes.push(lp);
+          }
+        },
         definirPeca: function (p) { peca = p; },
         fazerPeca: function (tipo, x, y) { return { tipo: tipo, m: FORMAS[tipo].slice(), x: x, y: y }; },
         matrizDe: function (tipo) { return FORMAS[tipo].slice(); },
         girarMatriz: girarMatriz,
         colide: colide,
         sortear: sortearPeca,
-        // usados pelos testes e pelas telas de verificacao
         definirPontos: function (v) { pontos = v; },
         definirLinhas: function (v) { linhas = v; },
         definirNivel: function (v) { nivel = v; }
@@ -668,7 +812,7 @@
     };
     limparTabuleiro();
     proxima = novaPeca(sortearPeca());
-    raiz.__tetris = api;          // acesso pelo console/automacao
+    raiz.__tetris = api;
     return api;
   }
 
