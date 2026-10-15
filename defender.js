@@ -601,9 +601,10 @@
       if (p.invulneravel > 0) p.invulneravel -= dt;
 
       // Direção e propulsão
-      if (this.teclas.reverter) {
+      if (this.teclas.reverter || this.teclas.reverso) {
         p.direcao = -p.direcao;
         this.teclas.reverter = false;
+        this.teclas.reverso = false;
       }
 
       if (this.teclas.thrust) {
@@ -1305,6 +1306,12 @@
             break;
         }
       });
+    }
+
+    reverterDirecao() {
+      if (this.jogador) {
+        this.jogador.direcao = -this.jogador.direcao;
+      }
     }
 
     startLoop() {

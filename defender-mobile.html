@@ -279,7 +279,11 @@
 
   ligarBotao("btn-up", () => game.teclas.cima = true, () => game.teclas.cima = false);
   ligarBotao("btn-down", () => game.teclas.baixo = true, () => game.teclas.baixo = false);
-  ligarBotao("btn-rev", () => game.teclas.reverso = true, () => {});
+  ligarBotao("btn-rev", () => {
+    game.teclas.reverter = true;
+    game.teclas.reverso = true;
+    if (game.reverterDirecao) game.reverterDirecao();
+  }, () => {});
   ligarBotao("btn-thrust", () => game.teclas.thrust = true, () => game.teclas.thrust = false);
   ligarBotao("btn-fire", () => game.teclas.disparo = true, () => game.teclas.disparo = false);
   ligarBotao("btn-bomb", () => game.teclas.smartBomb = true, () => {});

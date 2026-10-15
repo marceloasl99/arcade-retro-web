@@ -37,7 +37,7 @@
     flex:0 0 auto; height:44px; display:flex; align-items:center;
     justify-content:space-between; padding:0 8px; width:100%;
     background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(250,204,21,0.25);
-    z-index:20;
+    z-index:50;
   }
   #voltar-link {
     color:#facc15; text-decoration:none; font-size:10px; font-weight:800;
@@ -111,16 +111,9 @@
   #btn-right { top:33.3%; right:0; }
   .dpad-center {
     position:absolute; top:33.3%; left:33.3%; width:33.3%; height:33.3%;
-    background:#0f172a; border-radius:6px; pointer-events:none;
-    display:flex; align-items:center; justify-content:center; font-size:16px;
-  }
-
-  /* BOTÃO PLAY / RESET CENTRAL */
-  .dpad-center {
-    position:absolute; top:51px; left:51px; width:48px; height:48px;
     border-radius:10px; background:#020617; border:2px dashed rgba(250,204,21,0.4);
     display:flex; align-items:center; justify-content:center; font-size:16px;
-    cursor:pointer;
+    cursor:pointer; touch-action:manipulation;
   }
   .dpad-center:active { background:#eab308; }
 </style>
@@ -240,18 +233,22 @@
     const el = document.getElementById(id);
     if (!el) return;
     const disparar = (e) => {
-      e.preventDefault();
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
       el.classList.add("pressed");
+      if (game.sound) game.sound.init();
       game.setNextDirection(dir);
     };
     const soltar = (e) => {
-      e.preventDefault();
+      if (e && e.preventDefault) e.preventDefault();
       el.classList.remove("pressed");
     };
-    el.addEventListener("pointerdown", disparar);
-    el.addEventListener("pointerup", soltar);
-    el.addEventListener("pointercancel", soltar);
-    el.addEventListener("pointerleave", soltar);
+    el.addEventListener("pointerdown", disparar, { passive: false });
+    el.addEventListener("pointerup", soltar, { passive: false });
+    el.addEventListener("pointercancel", soltar, { passive: false });
+    el.addEventListener("pointerleave", soltar, { passive: false });
   }
 
   ligarBotao("btn-up", Pacman.DIR_UP);
@@ -259,18 +256,28 @@
   ligarBotao("btn-left", Pacman.DIR_LEFT);
   ligarBotao("btn-right", Pacman.DIR_RIGHT);
 
-  btnCenter.addEventListener("click", () => {
-    if (game.state === "start" || game.state === "gameover") {
+  const iniciarOuReiniciar = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (game.sound) game.sound.init();
+    if (game.state === "start" || game.state === "gameover" || game.state === "victory") {
       game.startNewGame();
     }
-  });
+  };
+
+  btnCenter.addEventListener("pointerdown", iniciarOuReiniciar, { passive: false });
+  btnCenter.addEventListener("click", iniciarOuReiniciar);
 
   btnPausa.addEventListener("click", () => game.togglePause());
   btnSom.addEventListener("click", () => game.toggleSound());
 
-  canvas.addEventListener("click", () => {
-    if (game.state === "start" || game.state === "gameover") {
-      game.startNewGame();
+  canvas.addEventListener("pointerdown", (e) => {
+    if (game.state === "start" || game.state === "gameover" || game.state === "victory") {
+      iniciarOuReiniciar(e);
+    }
+  }, { passive: false });
+  canvas.addEventListener("click", (e) => {
+    if (game.state === "start" || game.state === "gameover" || game.state === "victory") {
+      iniciarOuReiniciar(e);
     }
   });
 

@@ -120,16 +120,45 @@
     }
   }
 
-  function alternarTelaCheia() {
+  var _travaTempoFs = 0;
+  function alternarTelaCheia(e) {
+    if (e) {
+      try {
+        if (e.stopPropagation) e.stopPropagation();
+      } catch (err0) {}
+    }
+    var agora = Date.now();
+    if (agora - _travaTempoFs < 380) return;
+    _travaTempoFs = agora;
+
     try {
       var doc = raiz.document;
       if (!doc) return;
       if (!estaEmTelaCheia()) {
         var el = doc.documentElement;
         var rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (!rfs && doc.body) {
+          el = doc.body;
+          rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        }
         if (rfs) {
-          var p = rfs.call(el);
-          if (p && p.catch) p.catch(function () {});
+          var p;
+          try {
+            p = rfs.call(el, { navigationUI: 'hide' });
+          } catch (e1) {
+            try { p = rfs.call(el); } catch (e2) {}
+          }
+          if (p && p.catch) {
+            p.catch(function () {
+              try {
+                var el2 = (el === doc.body ? doc.documentElement : doc.body);
+                if (el2) {
+                  var rfs2 = el2.requestFullscreen || el2.webkitRequestFullscreen;
+                  if (rfs2) rfs2.call(el2);
+                }
+              } catch (e3) {}
+            });
+          }
         }
       } else {
         var efs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
@@ -139,6 +168,7 @@
         }
       }
     } catch (err) {}
+    setTimeout(atualizarBotoesTelaCheia, 100);
   }
 
   function atualizarAlturaReal() {
@@ -167,6 +197,17 @@
         b.setAttribute('aria-label', fs ? (lang === 'en' ? 'Exit Fullscreen' : 'Sair da Tela Cheia')
                                        : (lang === 'en' ? 'Play in Fullscreen' : 'Jogar em Tela Cheia'));
         b.classList.toggle('em-fullscreen', fs);
+
+        if (!b._fsHandlerBound) {
+          b._fsHandlerBound = true;
+          b.style.touchAction = 'manipulation';
+          b.addEventListener('pointerdown', function (evt) {
+            if (evt) {
+              if (evt.stopPropagation) evt.stopPropagation();
+            }
+            alternarTelaCheia(evt);
+          }, { passive: true });
+        }
       }
       setTimeout(function () {
         atualizarAlturaReal();

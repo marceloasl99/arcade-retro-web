@@ -293,6 +293,7 @@
 
         osc.connect(g);
         g.connect(this.ctx.destination);
+        osc.onended = () => { try { osc.disconnect(); g.disconnect(); } catch (e) {} };
         osc.start(t);
         osc.stop(t + 0.09);
       } catch (e) {}
@@ -725,12 +726,23 @@
         p.dir = p.nextDir;
       }
 
-      // 2. Cornering / 90-degree turn when approaching tile center
       const curC = Math.round(p.x);
       const curR = Math.round(p.y);
-      const distFromCenter = Math.hypot(p.x - curC, p.y - curR);
 
-      if (p.nextDir !== p.dir && distFromCenter < 0.35) {
+      // 2. Cornering / 90-degree turn when approaching tile center
+      const distFromCenter = Math.hypot(p.x - curC, p.y - curR);
+      if (p.nextDir !== p.dir && distFromCenter < 0.45) {
+        const nextC = curC + p.nextDir.x;
+        const nextR = curR + p.nextDir.y;
+        if (!this.isWall(nextC, nextR, false)) {
+          p.x = curC;
+          p.y = curR;
+          p.dir = p.nextDir;
+        }
+      }
+
+      // If stopped against a wall or at start, take nextDir directly if clear
+      if (!p.isMoving && p.nextDir !== DIR_NONE) {
         const nextC = curC + p.nextDir.x;
         const nextR = curR + p.nextDir.y;
         if (!this.isWall(nextC, nextR, false)) {
@@ -743,42 +755,64 @@
       // 3. Movement
       let moved = false;
       if (p.dir !== DIR_NONE) {
-        const nextX = p.x + p.dir.x * p.speed * dt;
-        const nextY = p.y + p.dir.y * p.speed * dt;
+        const step = p.speed * dt;
 
         // Side tunnel wrap-around (row 14)
         if (curR === 14) {
-          if (nextX < -0.5) {
+          if (p.x < -0.5) {
             p.x = COLS - 0.5;
             moved = true;
-          } else if (nextX > COLS - 0.5) {
+          } else if (p.x > COLS - 0.5) {
             p.x = -0.5;
             moved = true;
           }
         }
 
         if (!moved) {
-          // Check collision ahead
-          let blocked = false;
-          if (p.dir.x !== 0) {
-            const checkC = p.dir.x > 0 ? Math.floor(nextX + 0.5) : Math.ceil(nextX - 0.5);
-            if (this.isWall(checkC, curR, false) && (curR !== 14 || (checkC >= 0 && checkC < COLS))) {
-              blocked = true;
+          if (p.dir.x > 0) {
+            // Moving Right
+            p.y = curR;
+            const wallAhead = this.isWall(curC + 1, curR, false) && curR !== 14;
+            if (wallAhead && p.x + step >= curC) {
               p.x = curC;
+              moved = false;
+            } else {
+              p.x += step;
+              moved = true;
             }
-          }
-          if (p.dir.y !== 0) {
-            const checkR = p.dir.y > 0 ? Math.floor(nextY + 0.5) : Math.ceil(nextY - 0.5);
-            if (this.isWall(curC, checkR, false)) {
-              blocked = true;
+          } else if (p.dir.x < 0) {
+            // Moving Left
+            p.y = curR;
+            const wallAhead = this.isWall(curC - 1, curR, false) && curR !== 14;
+            if (wallAhead && p.x - step <= curC) {
+              p.x = curC;
+              moved = false;
+            } else {
+              p.x -= step;
+              moved = true;
+            }
+          } else if (p.dir.y > 0) {
+            // Moving Down
+            p.x = curC;
+            const wallAhead = this.isWall(curC, curR + 1, false);
+            if (wallAhead && p.y + step >= curR) {
               p.y = curR;
+              moved = false;
+            } else {
+              p.y += step;
+              moved = true;
             }
-          }
-
-          if (!blocked) {
-            p.x = nextX;
-            p.y = nextY;
-            moved = true;
+          } else if (p.dir.y < 0) {
+            // Moving Up
+            p.x = curC;
+            const wallAhead = this.isWall(curC, curR - 1, false);
+            if (wallAhead && p.y - step <= curR) {
+              p.y = curR;
+              moved = false;
+            } else {
+              p.y -= step;
+              moved = true;
+            }
           }
         }
       }
