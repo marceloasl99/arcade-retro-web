@@ -139,6 +139,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 * **Rescue System**: Shoot abducting Landers, catch falling humanoids in mid-air, and set them down safely for 1,000 bonus points.
 * **Emergency Systems**: Screen-clearing Smart Bombs (EMP) and Hyperspace jumps.
 
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![Defender Desktop](tela-defender-desktop.png) | ![Defender Mobile](tela-defender-mobile.png) |
+
 ---
 
 ### 8. Pac-Man (Namco 1980)
@@ -153,6 +157,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
   * Frightened mode with flashing blue/white ghosts and combo score multipliers (200 ➡️ 400 ➡️ 800 ➡️ 1,600 pts).
   * Cherry & Fruit bonus pickups.
   * Chiptune audio synthesizer generating waka-waka, siren hums, fruit eating, and classic death jingles.
+
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![Pac-Man Desktop](tela-pacman-desktop.png) | ![Pac-Man Mobile](tela-pacman-mobile.png) |
 
 ---
 
@@ -171,6 +179,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 * **Tournament Shootout Rules**:
   * Best-of-5 tournament shootout with sudden-death tiebreakers.
   * Authentic audio FX: Ball kick thuds, net rustle, glove saves, post/crossbar clangs, whistle blasts, and crowd celebrations.
+
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![Penalty Kick Desktop](tela-penalty-desktop.png) | ![Penalty Kick Mobile](tela-penalty-mobile.png) |
 
 ---
 
