@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05070d">
+<title>PINBALL 3D — Celular Fullscreen</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100vw; height:100dvh; height:100%;
+    margin:0; padding:0; overflow:hidden; position:fixed; inset:0;
+    background:#05070d; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#dfe9ff; touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+  }
+
+  /* Canvas 3D central ocupando a tela inteira */
+  #tela {
+    display:block; width:100vw; height:100dvh;
+    object-fit:cover; position:absolute; inset:0; z-index:1;
+  }
+
+  /* -------------------------- HUD SUPERIOR COMPACTO -------------------------- */
+  #hud-topo {
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    padding:calc(env(safe-area-inset-top) + 6px) 12px 6px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg, rgba(5,7,13,0.85) 0%, rgba(5,7,13,0) 100%);
+    pointer-events:none;
+  }
+  .hud-btn {
+    pointer-events:auto; display:flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:8px; background:rgba(18,28,52,0.75);
+    border:1px solid rgba(80,140,255,0.3); font-size:11px; font-weight:800;
+    color:#e2e8f0; text-decoration:none; backdrop-filter:blur(4px);
+    cursor:pointer;
+  }
+  .hud-btn:active { transform:scale(0.95); }
+
+  .placar-mobile {
+    display:flex; align-items:baseline; gap:12px; text-shadow:0 2px 8px rgba(0,0,0,0.9);
+  }
+  .placar-item { text-align:right; }
+  .placar-rot { font-size:7px; letter-spacing:0.18em; color:#94a3b8; display:block; }
+  .placar-val { font-size:16px; font-weight:900; color:#ffd479; font-variant-numeric:tabular-nums; }
+  #bolasV { color:#6ee7b7; }
+  #multV { color:#f472b6; }
+
+  /* Indicador flutuante de mensagens / combos */
+  #toast-msg {
+    position:fixed; left:50%; top:15%; transform:translateX(-50%);
+    font-size:clamp(16px, 3.5vh, 26px); font-weight:900; letter-spacing:0.12em;
+    color:#fff; text-shadow:0 0 20px rgba(56,189,248,0.95), 0 2px 10px rgba(0,0,0,0.9);
+    pointer-events:none; opacity:0; transition:opacity 0.15s; white-space:nowrap;
+    z-index:25; text-align:center;
+  }
+  #toast-msg.on { opacity:1; }
+
+  /* Indicadores de defesas da mesa (Kickback e Bola Salva) */
+  #hud-defesas {
+    position:fixed; top:calc(env(safe-area-inset-top) + 42px); left:12px; right:12px;
+    display:flex; gap:6px; z-index:21; pointer-events:none;
+  }
+  .pilula-defesa {
+    font-size:9px; font-weight:800; letter-spacing:0.1em; padding:2px 7px;
+    border-radius:10px; background:rgba(10,18,34,0.75); border:1px solid rgba(255,255,255,0.15);
+    color:#64748b; opacity:0.4; transition:all 0.15s; text-transform:uppercase; backdrop-filter:blur(4px);
+  }
+  .pilula-defesa.ativo-salva {
+    background:rgba(245,158,11,0.25); border-color:#f59e0b; color:#fef08a; opacity:1;
+    box-shadow:0 0 10px rgba(245,158,11,0.6);
+  }
+  .pilula-defesa.ativo-kick {
+    background:rgba(16,185,129,0.25); border-color:#10b981; color:#a7f3d0; opacity:1;
+    box-shadow:0 0 10px rgba(16,185,129,0.6);
+  }
+
+  /* Indicador de barra de força do lançador no topo */
+  #forca-topo {
+    position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 64px); transform:translateX(-50%);
+    width:min(70vw, 280px); height:8px; border-radius:6px; background:rgba(0,0,0,0.6);
+    border:1px solid rgba(255,255,255,0.2); overflow:hidden; z-index:22;
+    opacity:0; transition:opacity 0.12s; pointer-events:none;
+  }
+  #forca-topo.on { opacity:1; }
+  #forca-topo i { display:block; height:100%; width:0%; background:linear-gradient(90deg, #38bdf8, #f59e0b, #ef4444); }
+
+  /* ------------------- OS 4 BOTÕES TÁTEIS PRINCIPAIS ------------------- */
+  #controles-mobile {
+    position:fixed; inset:0; pointer-events:none; z-index:30;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:0 calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 14px) calc(env(safe-area-inset-left) + 12px);
+  }
+
+  .col-botoes {
+    display:flex; flex-direction:column; gap:12px; pointer-events:auto;
+  }
+
+  /* Estilo dos Botões Virtuais */
+  .btn-virtual {
+    width:clamp(82px, 22vw, 110px); height:clamp(82px, 22vw, 110px);
+    border-radius:24px; border:2px solid rgba(120,170,255,0.4);
+    background:radial-gradient(circle at 35% 35%, rgba(30,55,100,0.85), rgba(12,22,44,0.92));
+    backdrop-filter:blur(8px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#f8fafc; font-weight:900; box-shadow:0 6px 20px rgba(0,0,0,0.6), inset 0 2px 6px rgba(255,255,255,0.2);
+    cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:transform 0.06s, border-color 0.06s, background 0.06s, box-shadow 0.06s;
+  }
+  .btn-virtual:active, .btn-virtual.ativo {
+    transform:scale(0.92); border-color:#ffd479;
+    background:radial-gradient(circle at 35% 35%, rgba(60,110,200,0.95), rgba(20,40,80,0.96));
+    box-shadow:0 0 22px rgba(255,212,121,0.6), inset 0 2px 8px rgba(255,255,255,0.4);
+  }
+  .btn-virtual .icone {
+    font-size:clamp(26px, 6.5vw, 36px); line-height:1; font-style:normal;
+  }
+  .btn-virtual .legenda {
+    font-size:clamp(8px, 2vw, 10px); letter-spacing:0.12em; margin-top:4px; color:#cbd5e1;
+  }
+
+  /* Botão Lançar / Jogar a Bola */
+  #btnLancar {
+    border-color:rgba(56,189,248,0.5);
+    background:radial-gradient(circle at 35% 35%, rgba(14,116,144,0.85), rgba(8,47,73,0.92));
+  }
+  #btnLancar:active, #btnLancar.ativo {
+    border-color:#38bdf8;
+    background:radial-gradient(circle at 35% 35%, rgba(2,132,199,0.95), rgba(12,74,110,0.96));
+    box-shadow:0 0 24px rgba(56,189,248,0.7);
+  }
+
+  /* Botão Tremer a Mesa (Nudge / Tilt) */
+  #btnTremer {
+    border-color:rgba(245,158,11,0.5);
+    background:radial-gradient(circle at 35% 35%, rgba(180,83,9,0.85), rgba(69,26,3,0.92));
+  }
+  #btnTremer:active, #btnTremer.ativo {
+    border-color:#fbbf24;
+    background:radial-gradient(circle at 35% 35%, rgba(217,119,6,0.95), rgba(120,53,15,0.96));
+    box-shadow:0 0 24px rgba(251,191,36,0.7);
+  }
+
+  /* -------------------------- MENUS E SELETOR -------------------------- */
+  .overlay {
+    position:fixed; inset:0; z-index:50;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(8px, 1.8vh, 14px); padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 10px);
+    background:radial-gradient(circle at 50% 45%, rgba(10,18,36,0.92), rgba(4,6,12,0.98));
+    backdrop-filter:blur(8px);
+  }
+  .overlay.oculto { display:none; }
+  h1 { font-size:clamp(20px, 4.5vh, 32px); font-weight:900; letter-spacing:0.18em; color:#fff; text-shadow:0 0 24px rgba(56,189,248,0.8); text-align:center; }
+  h1 small { display:block; font-size:clamp(8px, 1.6vh, 11px); letter-spacing:0.32em; color:#7fa6e0; margin-top:4px; font-weight:400; }
+  #listaMesas { display:flex; flex-direction:column; gap:6px; width:min(94vw, 420px); max-height:46vh; overflow-y:auto; }
+  .mesaOp {
+    display:flex; align-items:center; gap:12px; padding:8px 14px;
+    border:1px solid rgba(120,160,230,0.28); border-radius:10px;
+    background:rgba(12,18,34,0.75); cursor:pointer;
+  }
+  .mesaOp.sel { border-color:#ffd479; background:rgba(42,32,10,0.88); }
+  .mesaOp .num { font-size:12px; font-weight:800; color:#64748b; min-width:18px; }
+  .mesaOp .nome { font-size:13px; font-weight:800; letter-spacing:0.1em; color:#f8fafc; }
+  .mesaOp .sub { font-size:9px; color:#94a3b8; }
+
+  #botaoJogar, #botaoJogar2 {
+    padding:10px 36px; border:2px solid #38bdf8; border-radius:12px;
+    background:rgba(14,116,144,0.35); color:#fff; font-size:14px; font-weight:900;
+    letter-spacing:0.2em; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="tela"></canvas>
+
+<!-- HUD Superior Compacto -->
+<div id="hud-topo">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a class="hud-btn" href="index.html">&larr; JOGOS</a>
+    <button class="hud-btn" id="btnMesaMenu">
+      <span id="mesaNomeTopo">ESPAÇO</span> &#9662;
+    </button>
+  </div>
+  <div class="placar-mobile">
+    <div class="placar-item">
+      <span class="placar-rot">PONTOS</span>
+      <span class="placar-val" id="pontosV">0</span>
+    </div>
+    <div class="placar-item">
+      <span class="placar-rot">BOLAS</span>
+      <span class="placar-val" id="bolasV">3</span>
+    </div>
+    <div class="placar-item">
+      <span class="placar-rot">BÔNUS</span>
+      <span class="placar-val" id="multV">x1</span>
+    </div>
+    <button class="hud-btn" id="btnSomTopo" style="padding:6px 8px;">🔊</button>
+  </div>
+</div>
+
+<!-- Badges de defesas da mesa (Bola Salva e Kickback) -->
+<div id="hud-defesas">
+  <span class="pilula-defesa" id="mBallSave">SALVA 12s</span>
+  <span class="pilula-defesa" id="mKickback">KICKBACK</span>
+</div>
+
+<!-- Barra de força do lançador no topo -->
+<div id="forca-topo"><i></i></div>
+
+<!-- Toast de Mensagens (Multiball, Bônus, Tilt) -->
+<div id="toast-msg"></div>
+
+<!-- ==================== OS 4 BOTÕES TÁTEIS ==================== -->
+<div id="controles-mobile">
+  <!-- Coluna Esquerda: 1. Tremer a Mesa | 2. Flipper Esquerdo -->
+  <div class="col-botoes">
+    <!-- Botão 4: Tremer a Mesa (Nudge / Tilt real) -->
+    <button class="btn-virtual" id="btnTremer">
+      <i class="icone">📳</i>
+      <span class="legenda">TREMER</span>
+    </button>
+    <!-- Botão 1: Flipper Esquerdo -->
+    <button class="btn-virtual" id="btnFlipEsq">
+      <i class="icone">&#9664;</i>
+      <span class="legenda">FLIP ESQ</span>
+    </button>
+  </div>
+
+  <!-- Coluna Direita: 3. Jogar a Bola (Lançador) | 4. Flipper Direito -->
+  <div class="col-botoes">
+    <!-- Botão 3: Jogar a Bola (Lançador / Plunger) -->
+    <button class="btn-virtual" id="btnLancar">
+      <i class="icone">🚀</i>
+      <span class="legenda">JOGAR BOLA</span>
+    </button>
+    <!-- Botão 2: Flipper Direito -->
+    <button class="btn-virtual" id="btnFlipDir">
+      <i class="icone">&#9654;</i>
+      <span class="legenda">FLIP DIR</span>
+    </button>
+  </div>
+</div>
+
+<!-- Overlay Menu de Mesas -->
+<div id="menuMesa" class="overlay">
+  <h1>PINBALL 3D<small>5 MESAS · CELULAR CHEIO</small></h1>
+  <div id="listaMesas"></div>
+  <button id="botaoJogar">INICIAR JOGO</button>
+  <div style="font-size:clamp(9px, 1.5vh, 11px);color:#94a3b8;text-align:center;line-height:1.5;margin-top:2px;">
+    Use os 4 botões na parte inferior para jogar:<br>
+    <b>◄ / ►</b> Flippers &middot; <b>🚀</b> Jogar a Bola &middot; <b>📳</b> Tremer a Mesa
+  </div>
+</div>
+
+<!-- Overlay Fim de Jogo -->
+<div id="fimJogo" class="overlay oculto">
+  <h1 id="fimTitulo">FIM DE JOGO<small id="fimSub"></small></h1>
+  <button id="botaoJogar2">JOGAR DE NOVO</button>
+</div>
+
+<script src="roteador.js"></script>
+<script src="pinball.js"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  var el = {
+    mesaNomeTopo: document.getElementById('mesaNomeTopo'),
+    pontos: document.getElementById('pontosV'),
+    bolas: document.getElementById('bolasV'),
+    mult: document.getElementById('multV'),
+    btnMesaMenu: document.getElementById('btnMesaMenu'),
+    btnSomTopo: document.getElementById('btnSomTopo'),
+    forcaTopo: document.getElementById('forca-topo'),
+    forcaBarra: document.querySelector('#forca-topo i'),
+    toast: document.getElementById('toast-msg'),
+    menu: document.getElementById('menuMesa'),
+    lista: document.getElementById('listaMesas'),
+    fim: document.getElementById('fimJogo'),
+    fimTitulo: document.getElementById('fimTitulo'),
+    fimSub: document.getElementById('fimSub'),
+    btnFlipEsq: document.getElementById('btnFlipEsq'),
+    btnFlipDir: document.getElementById('btnFlipDir'),
+    btnLancar: document.getElementById('btnLancar'),
+    btnTremer: document.getElementById('btnTremer'),
+    mBallSave: document.getElementById('mBallSave'),
+    mKickback: document.getElementById('mKickback')
+  };
+
+  if (typeof window.criarPinball !== 'function') {
+    document.body.innerHTML = '<p style="color:#fff;padding:20px;font:15px monospace">' +
+      'Faltou o arquivo <b>pinball.js</b> na mesma pasta desta p&aacute;gina.</p>';
+    return;
+  }
+
+  function vibrar(ms) {
+    try {
+      if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(ms);
+    } catch (e) {}
+  }
+
+  var jogando = false;
+  var ultimaMensagem = '';
+  var jogo = window.criarPinball(canvas, {
+    aoAtualizar: function (d) {
+      if (d.mesa) el.mesaNomeTopo.textContent = d.mesa.nome;
+      el.pontos.textContent = d.pontos.toLocaleString('pt-BR');
+      el.bolas.textContent = d.bolas;
+      el.mult.textContent = 'x' + d.mult;
+      el.btnSomTopo.textContent = d.som ? '🔊' : '🔇';
+
+      // Defesas: Kickback e Bola Salva
+      var segSalva = Math.max(0, Math.ceil(d.tempoSalva || 0));
+      if (d.ballSave && segSalva > 0) {
+        if (el.mBallSave) {
+          el.mBallSave.textContent = 'SALVA ' + segSalva + 's';
+          el.mBallSave.className = 'pilula-defesa ativo-salva';
+        }
+      } else {
+        if (el.mBallSave) {
+          el.mBallSave.textContent = 'SALVA';
+          el.mBallSave.className = 'pilula-defesa';
+        }
+      }
+
+      if (d.kickback) {
+        if (el.mKickback) {
+          el.mKickback.textContent = 'KICKBACK';
+          el.mKickback.className = 'pilula-defesa ativo-kick';
+        }
+      } else {
+        if (el.mKickback) {
+          el.mKickback.textContent = 'KICKBACK OFF';
+          el.mKickback.className = 'pilula-defesa';
+        }
+      }
+
+      // Lançador / força
+      if (d.lancador > 0.01) {
+        el.forcaTopo.classList.add('on');
+        el.forcaBarra.style.width = Math.round(d.lancador * 100) + '%';
+      } else {
+        el.forcaTopo.classList.remove('on');
+      }
+
+      // Toast de mensagens
+      if (d.mensagem && d.mensagem !== ultimaMensagem) {
+        el.toast.textContent = d.mensagem;
+        el.toast.classList.add('on');
+      } else if (!d.mensagem && ultimaMensagem) {
+        el.toast.classList.remove('on');
+      }
+      ultimaMensagem = d.mensagem;
+
+      // Fim de jogo
+      if (d.estado === 'fim') {
+        el.fim.classList.remove('oculto');
+        el.menu.classList.add('oculto');
+        el.fimSub.textContent = (d.mesa ? d.mesa.nome : '') + ' · ' + d.pontos.toLocaleString('pt-BR') + ' PONTOS';
+        jogando = false;
+      } else {
+        el.fim.classList.add('oculto');
+      }
+    }
+  });
+
+  /* ------------------------- SELETOR DE MESAS ------------------------- */
+  var mesas = jogo.mesas();
+  var selecionada = 0;
+  var itens = [];
+  mesas.forEach(function (m, i) {
+    var d = document.createElement('div');
+    d.className = 'mesaOp';
+    d.innerHTML = '<span class="num">0' + (i + 1) + '</span>' +
+      '<div><div class="nome">' + m.nome + '</div><div class="sub">' + m.subtitulo + '</div></div>';
+    function escolher(e) {
+      if (e) e.preventDefault();
+      selecionada = i; jogo.escolherMesa(i); marcar(); comecar();
+    }
+    d.addEventListener('pointerdown', escolher);
+    el.lista.appendChild(d);
+    itens.push(d);
+  });
+  function marcar() { itens.forEach(function (d, i) { d.classList.toggle('sel', i === selecionada); }); }
+  marcar();
+
+  function comecar() {
+    jogando = true;
+    el.menu.classList.add('oculto');
+    el.fim.classList.add('oculto');
+    jogo.acao('comecar');
+  }
+  document.getElementById('botaoJogar').addEventListener('pointerdown', function (e) {
+    e.preventDefault(); comecar();
+  });
+  document.getElementById('botaoJogar2').addEventListener('pointerdown', function (e) {
+    e.preventDefault(); comecar();
+  });
+  el.btnMesaMenu.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    el.menu.classList.toggle('oculto');
+  });
+  el.btnSomTopo.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    jogo.acao('som');
+  });
+
+  /* ------------------- ATIVAÇÃO DOS 4 BOTÕES TÁTEIS ------------------- */
+  // 1. Flipper Esquerdo
+  function ligarBotao(btn, onDown, onUp) {
+    btn.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      btn.classList.add('ativo');
+      onDown();
+    }, { passive: false });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+      btn.addEventListener(evt, function (e) {
+        if (e) e.preventDefault();
+        btn.classList.remove('ativo');
+        onUp();
+      }, { passive: false });
+    });
+  }
+
+  // Botão 1: Flipper Esquerdo
+  ligarBotao(el.btnFlipEsq, function () {
+    vibrar(14);
+    jogo.entrada.fliper('esq', true);
+  }, function () {
+    jogo.entrada.fliper('esq', false);
+  });
+
+  // Botão 2: Flipper Direito
+  ligarBotao(el.btnFlipDir, function () {
+    vibrar(14);
+    jogo.entrada.fliper('dir', true);
+  }, function () {
+    jogo.entrada.fliper('dir', false);
+  });
+
+  // Botão 3: Jogar a Bola (Lançador / Plunger)
+  ligarBotao(el.btnLancar, function () {
+    vibrar(22);
+    if (!jogando) { comecar(); return; }
+    jogo.entrada.lancador(true);
+  }, function () {
+    if (jogando) {
+      vibrar(35);
+      jogo.entrada.lancador(false);
+    }
+  });
+
+  // Botão 4: Tremer a Mesa (Nudge / Tilt)
+  el.btnTremer.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    el.btnTremer.classList.add('ativo');
+    vibrar([20, 30, 20]);
+    jogo.entrada.tremer();
+  }, { passive: false });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+    el.btnTremer.addEventListener(evt, function () {
+      el.btnTremer.classList.remove('ativo');
+    });
+  });
+
+  /* ---------------------------- REDIMENSIONAR ------------------------- */
+  function ajustar() {
+    var l = window.innerWidth, a = window.innerHeight;
+    jogo.redimensionar(l, a);
+    canvas.style.width = l + 'px';
+    canvas.style.height = a + 'px';
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', ajustar);
+  window.addEventListener('load', ajustar);
+  setTimeout(ajustar, 250);
+
+  jogo.iniciar();
+  jogo.escolherMesa(selecionada);
+  window.__pinball = jogo;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<title>MINHOQUINHA — Nokia (celular)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%;
+    background:#000; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+  }
+  body { font-family:monospace; }
+
+  #app {
+    position:relative;
+    width:100vw; height:100vh;
+    display:flex;
+    flex-direction:row;              /* PAISAGEM: jogo a esquerda, setas a direita */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* área do jogo: não influencia o tamanho do flex (canvas é absoluto) */
+  #stage {
+    flex:1 1 auto; min-width:0; min-height:0;
+    position:relative; overflow:hidden;
+  }
+  #cga {
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    display:block;
+    image-rendering:pixelated;
+    image-rendering:-moz-crisp-edges;
+    image-rendering:crisp-edges;
+    background:#000;
+    color:#55FF55;
+  }
+
+  /* --------------------------- D-PAD (4 setas) --------------------------- */
+  #pad {
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:repeat(3,64px);
+    grid-template-rows:repeat(3,64px);
+    gap:6px;
+    align-content:center; justify-content:center;
+    align-self:center;
+    color:#55FF55;                 /* cor CGA atual (atualizada por JS) */
+    padding:0 4px;
+  }
+
+  .pbtn {
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:0;
+    background:#001200;
+    border:3px solid currentColor;
+    border-radius:10px;
+    color:inherit;
+    outline:none; cursor:pointer;
+    transition:transform .04s linear, background-color .06s linear;
+  }
+  .pbtn .arw { width:52%; height:52%; fill:currentColor; display:block; }
+  .pbtn.on, .pbtn:active { background:currentColor; }
+  .pbtn.on .arw, .pbtn:active .arw { fill:#001200; }
+  .pbtn.on, .pbtn:active { transform:scale(.94); }
+
+  /* setas giradas a partir do triangulo que aponta para cima */
+  #b-up    .arw { transform:rotate(0deg); }
+  #b-left  .arw { transform:rotate(-90deg); }
+  #b-right .arw { transform:rotate(90deg); }
+  #b-down  .arw { transform:rotate(180deg); }
+
+  /* cantos: som e paleta, menores para não atrapalhar */
+  .corner { width:72%; height:72%; align-self:center; justify-self:center;
+            border-width:2px; border-radius:8px; opacity:.8; }
+  .corner:active { opacity:1; }
+  .lbl { font:bold 15px/1 monospace; letter-spacing:.5px; color:currentColor; }
+
+  /* ícones que trocam (pausa/play, som/mudo) */
+  #b-pause .ic-play { display:none; }
+  #b-pause.paused .ic-pause { display:none; }
+  #b-pause.paused .ic-play { display:block; }
+  #b-sound.off .ic-snd { display:none; }
+  #b-sound:not(.off) .ic-mute { display:none; }
+
+  /* aviso de girar o aparelho (só em retrato) */
+  #hint {
+    display:none;
+    position:fixed; left:0; right:0; top:0; z-index:40;
+    padding:5px 8px; text-align:center;
+    background:#001200; color:#55FF55;
+    font:bold 12px/1.3 monospace;
+    border-bottom:1px solid #55FF55;
+  }
+
+  /* RETRATO: jogo em cima, setas embaixo (o jogo é feito para paisagem) */
+  @media (orientation: portrait) {
+    #app { flex-direction:column; }
+    #stage { flex:1 1 auto; margin-top:24px; }
+    #pad { align-self:center; padding-bottom:6px; }
+    #hint { display:block; }
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:10px;left:14px;z-index:50;color:#55FF55;font:13px monospace;text-decoration:none;opacity:.6">&#8592; JOGOS</a>
+<div id="app">
+  <div id="stage"><canvas id="cga" width="480" height="270"></canvas></div>
+
+  <div id="pad">
+    <button class="pbtn corner" id="b-sound" aria-label="Ligar ou desligar o som">
+      <svg class="arw ic-snd" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9 L9 9 L14 5 L14 19 L9 15 L4 15 Z"/>
+        <path d="M17 8 Q20.5 12 17 16" fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <svg class="arw ic-mute" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9 L9 9 L14 5 L14 19 L9 15 L4 15 Z"/>
+        <path d="M17 9 L22 16 M22 9 L17 16" fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+
+    <button class="pbtn" id="b-up" aria-label="Cima">
+      <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+    </button>
+
+    <span></span>
+
+    <button class="pbtn" id="b-left" aria-label="Esquerda">
+      <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+    </button>
+
+    <button class="pbtn" id="b-pause" aria-label="Pausar ou continuar">
+      <svg class="arw ic-pause" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/>
+      </svg>
+      <svg class="arw ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 L20 12 L7 20 Z"/></svg>
+    </button>
+
+    <button class="pbtn" id="b-right" aria-label="Direita">
+      <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+    </button>
+
+    <span></span>
+
+    <button class="pbtn" id="b-down" aria-label="Baixo">
+      <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+    </button>
+
+    <button class="pbtn corner" id="b-pal" aria-label="Trocar a paleta CGA">
+      <span class="lbl">PAL</span>
+    </button>
+  </div>
+</div>
+
+<div id="hint">GIRE O APARELHO &#8635; MELHOR NA HORIZONTAL</div>
+
+<script src="roteador.js"></script>
+<script>
+"use strict";
+
+/* ==========================================================================
+   NOKIA "MINHOQUINHA" — VERSAO MOBILE (paisagem + D-pad de 4 setas)
+   Mesmo motor do index.html (desktop): framebuffer CGA 480x270 (4 cores),
+   ampliado por fator inteiro (x4 = 1920x1080 num monitor Full HD).
+   Diferencas desta versao:
+     - layout paisagem: jogo a esquerda, D-pad de 4 setas a direita
+     - retrato: jogo em cima, D-pad embaixo (com aviso para girar)
+     - tela cheia + trava em paisagem + tela nao apaga, ao comecar
+     - textos do HUD maiores (tela pequena)
+   ========================================================================== */
+
+var W = 480, H = 270;          // resolucao interna (1/4 do Full HD)
+var CELL = 15;                 // tamanho da celula em pixels CGA
+var COLS = 32, ROWS = 18;      // 32*15 = 480 | 18*15 = 270
+
+var X0 = 1, X1 = COLS - 2;     // area jogavel: 1..30
+var Y0 = 1, Y1 = ROWS - 2;     // area jogavel: 1..16
+
+var SPEED_START = 135;
+var SPEED_MIN   = 60;
+var SPEED_STEP  = 4;
+
+var canvas = document.getElementById('cga');
+var stage  = document.getElementById('stage');
+var pad    = document.getElementById('pad');
+var ctx    = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+/* ---------------------------- paletas CGA ------------------------------- */
+var PALETTES = [
+  { name:'CGA PAL0 HI', bg:'#000000', bright:'#55FF55', dim:'#00AA00',
+    food:'#FF5555', alt:'#FFFF55' },
+  { name:'CGA PAL0 LO', bg:'#000000', bright:'#00AA00', dim:'#005500',
+    food:'#AA0000', alt:'#AA5500' },
+  { name:'CGA PAL1 HI', bg:'#000000', bright:'#55FFFF', dim:'#00AAAA',
+    food:'#FF55FF', alt:'#FFFFFF' }
+];
+var palIndex = 0;
+function P() { return PALETTES[palIndex]; }
+
+/* ------------------------- fonte pixel 3x5 ------------------------------ */
+var FONT = {
+  'A':['111','101','111','101','101'], 'B':['110','101','110','101','110'],
+  'C':['111','100','100','100','111'], 'D':['110','101','101','101','110'],
+  'E':['111','100','110','100','111'], 'F':['111','100','110','100','100'],
+  'G':['111','100','101','101','111'], 'H':['101','101','111','101','101'],
+  'I':['111','010','010','010','111'], 'J':['001','001','001','101','111'],
+  'K':['101','101','110','101','101'], 'L':['100','100','100','100','111'],
+  'M':['101','111','111','101','101'], 'N':['101','111','111','111','101'],
+  'O':['111','101','101','101','111'], 'P':['111','101','111','100','100'],
+  'Q':['111','101','101','111','001'], 'R':['111','101','111','110','101'],
+  'S':['111','100','111','001','111'], 'T':['111','010','010','010','010'],
+  'U':['101','101','101','101','111'], 'V':['101','101','101','101','010'],
+  'W':['101','101','111','111','101'], 'X':['101','101','010','101','101'],
+  'Y':['101','101','010','010','010'], 'Z':['111','001','010','100','111'],
+  '0':['111','101','101','101','111'], '1':['010','110','010','010','111'],
+  '2':['111','001','111','100','111'], '3':['111','001','111','001','111'],
+  '4':['101','101','111','001','001'], '5':['111','100','111','001','111'],
+  '6':['111','100','111','101','111'], '7':['111','001','001','001','001'],
+  '8':['111','101','111','101','111'], '9':['111','101','111','001','111'],
+  '-':['000','000','111','000','000'], '.':['000','000','000','000','010'],
+  '/':['001','001','010','100','100'], ':':['000','010','000','010','000'],
+  '!':['010','010','010','000','010'], ' ':['000','000','000','000','000']
+};
+
+function textWidth(str, s) { s = s || 1; return str.length * 4 * s - s; }
+
+function drawText(str, x, y, color, s) {
+  s = s || 1;
+  ctx.fillStyle = color;
+  var cx = x;
+  str = String(str).toUpperCase();
+  for (var i = 0; i < str.length; i++) {
+    var ch = str.charAt(i);
+    if (ch === '\n') { cx = x; y += 6 * s; continue; }
+    var g = FONT[ch] || FONT[' '];
+    for (var r = 0; r < 5; r++) {
+      var row = g[r];
+      for (var c = 0; c < 3; c++) {
+        if (row.charAt(c) === '1') ctx.fillRect(cx + c * s, y + r * s, s, s);
+      }
+    }
+    cx += 4 * s;
+  }
+}
+
+function drawTextCentered(str, cy, color, s) {
+  s = s || 1;
+  var lines = String(str).toUpperCase().split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var w = textWidth(lines[i], s);
+    drawText(lines[i], Math.round((W - w) / 2), cy + i * 6 * s, color, s);
+  }
+}
+
+function pad3(num) {
+  var t = String(num);
+  while (t.length < 3) t = '0' + t;
+  return t;
+}
+
+/* ------------------------------- estado --------------------------------- */
+var STATE_READY = 0, STATE_PLAY = 1, STATE_PAUSE = 2, STATE_OVER = 3, STATE_WIN = 4;
+
+var state = STATE_READY;
+var snake = [];
+var dir = { x: 1, y: 0 };
+var queue = [];
+var food = { x: 0, y: 0 };
+var score = 0;
+var hi = 0;
+var stepMs = SPEED_START;
+var acc = 0;
+var last = 0;
+var blink = 0;
+var muted = false;
+var dirty = true;               // telas paradas so redesenham quando mudam
+
+try { hi = parseInt(localStorage.getItem('minhoquinha.hi') || '0', 10) || 0; } catch (e) { hi = 0; }
+
+/* ------------------------------- audio ---------------------------------- */
+var actx = null;
+function audioInit() {
+  if (actx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) actx = new AC();
+  } catch (e) { actx = null; }
+}
+function beep(freq, dur, type, vol) {
+  if (muted) return;
+  audioInit();
+  if (!actx) return;
+  try {
+    if (actx.state === 'suspended') actx.resume();
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.value = freq;
+    g.gain.value = vol === undefined ? 0.06 : vol;
+    o.connect(g); g.connect(actx.destination);
+    var t = actx.currentTime;
+    o.start(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+
+/* ------------------------------ helpers --------------------------------- */
+function isFree(x, y) {
+  if (x === food.x && y === food.y) return false;
+  for (var i = 0; i < snake.length; i++) {
+    if (snake[i].x === x && snake[i].y === y) return false;
+  }
+  return true;
+}
+
+function placeFood() {
+  var free = [];
+  for (var y = Y0; y <= Y1; y++) {
+    for (var x = X0; x <= X1; x++) {
+      if (isFree(x, y)) free.push({ x: x, y: y });
+    }
+  }
+  if (free.length === 0) {
+    state = STATE_WIN;
+    dirty = true;
+    if (score > hi) {
+      hi = score;
+      try { localStorage.setItem('minhoquinha.hi', String(hi)); } catch (e) {}
+    }
+    winSound();
+    return;
+  }
+  food = free[(Math.random() * free.length) | 0];
+}
+
+function winSound() {
+  beep(660, 0.10, 'square', 0.07);
+  setTimeout(function () { beep(880, 0.10, 'square', 0.07); }, 110);
+  setTimeout(function () { beep(1320, 0.22, 'square', 0.07); }, 230);
+}
+
+function newGame() {
+  snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+  dir = { x: 1, y: 0 };
+  queue = [];
+  score = 0;
+  stepMs = SPEED_START;
+  acc = 0;
+  state = STATE_PLAY;
+  dirty = true;
+  placeFood();
+  beep(440, 0.06, 'square', 0.05);
+  keepAwake();
+}
+
+function die() {
+  state = STATE_OVER;
+  dirty = true;
+  if (score > hi) {
+    hi = score;
+    try { localStorage.setItem('minhoquinha.hi', String(hi)); } catch (e) {}
+  }
+  beep(220, 0.18, 'square', 0.08);
+  setTimeout(function () { beep(150, 0.30, 'square', 0.08); }, 190);
+}
+
+function togglePause() {
+  if (state === STATE_PLAY) { state = STATE_PAUSE; dirty = true; beep(330, 0.05, 'square', 0.04); }
+  else if (state === STATE_PAUSE) { state = STATE_PLAY; dirty = true; beep(440, 0.05, 'square', 0.04); }
+}
+
+function pushDir(x, y) {
+  var lastDir = queue.length ? queue[queue.length - 1] : dir;
+  if (x === -lastDir.x && y === -lastDir.y) return;
+  if (x === lastDir.x && y === lastDir.y) return;
+  if (queue.length < 3) queue.push({ x: x, y: y });
+}
+
+function idle() {
+  return state === STATE_READY || state === STATE_OVER || state === STATE_WIN;
+}
+
+/* ------------------------------- logica --------------------------------- */
+function tick() {
+  if (state !== STATE_PLAY) return;
+
+  while (queue.length) {
+    var d = queue.shift();
+    if (d.x === -dir.x && d.y === -dir.y) continue;
+    if (d.x === dir.x && d.y === dir.y) continue;
+    dir = d;
+    break;
+  }
+
+  var hx = snake[0].x + dir.x;
+  var hy = snake[0].y + dir.y;
+
+  if (hx < X0 || hx > X1 || hy < Y0 || hy > Y1) { die(); return; }
+
+  var grow = (hx === food.x && hy === food.y);
+
+  var limit = snake.length - (grow ? 0 : 1);
+  for (var i = 0; i < limit; i++) {
+    if (snake[i].x === hx && snake[i].y === hy) { die(); return; }
+  }
+
+  snake.unshift({ x: hx, y: hy });
+  if (grow) {
+    score += 1;
+    beep(880 + score * 8, 0.06, 'square', 0.06);
+    if (stepMs > SPEED_MIN) stepMs = Math.max(SPEED_MIN, stepMs - SPEED_STEP);
+    placeFood();
+  } else {
+    snake.pop();
+  }
+}
+
+/* ------------------------------ desenho --------------------------------- */
+function drawFrame() {
+  var p = P();
+  ctx.fillStyle = p.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  var left = X0 * CELL - 1, top = Y0 * CELL - 1;
+  var w = (X1 - X0 + 1) * CELL + 2, h = (Y1 - Y0 + 1) * CELL + 2;
+  ctx.fillStyle = p.dim;
+  ctx.fillRect(left, top, w, 1);
+  ctx.fillRect(left, top + h - 1, w, 1);
+  ctx.fillRect(left, top, 1, h);
+  ctx.fillRect(left + w - 1, top, 1, h);
+}
+
+function drawFood() {
+  if (state === STATE_WIN) return;
+  var p = P();
+  var on = (Math.floor(blink / 250) % 2) === 0;
+  ctx.fillStyle = on ? p.food : p.alt;
+  ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
+  ctx.fillStyle = p.bg;
+  ctx.fillRect(food.x * CELL + 5, food.y * CELL + 5, CELL - 10, CELL - 10);
+  ctx.fillStyle = on ? p.food : p.alt;
+  ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, 3, 3);
+  ctx.fillRect(food.x * CELL + CELL - 6, food.y * CELL + CELL - 6, 3, 3);
+}
+
+function drawSnake() {
+  var p = P();
+  for (var i = snake.length - 1; i >= 0; i--) {
+    var s = snake[i];
+    var x = s.x * CELL, y = s.y * CELL;
+    if (i === 0) {
+      ctx.fillStyle = p.bright;
+      ctx.fillRect(x, y, CELL, CELL);
+      ctx.fillStyle = p.bg;
+      var e1x, e1y, e2x, e2y;
+      if (dir.x === 1)       { e1x = x + CELL - 5; e1y = y + 3;        e2x = x + CELL - 5; e2y = y + CELL - 6; }
+      else if (dir.x === -1) { e1x = x + 2;        e1y = y + 3;        e2x = x + 2;        e2y = y + CELL - 6; }
+      else if (dir.y === -1) { e1x = x + 3;        e1y = y + 2;        e2x = x + CELL - 6; e2y = y + 2; }
+      else                   { e1x = x + 3;        e1y = y + CELL - 5; e2x = x + CELL - 6; e2y = y + CELL - 5; }
+      ctx.fillRect(e1x, e1y, 3, 3);
+      ctx.fillRect(e2x, e2y, 3, 3);
+    } else {
+      ctx.fillStyle = p.dim;
+      ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = p.bright;
+      ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
+    }
+  }
+}
+
+// HUD com texto maior (escala 2) por causa da tela pequena do celular
+function drawHud() {
+  var p = P();
+  drawText('SCORE ' + pad3(score), 4, 2, p.bright, 2);
+  var h = 'HI ' + pad3(hi);
+  drawText(h, W - textWidth(h, 2) - 4, 2, p.dim, 2);
+  drawText(p.name, 4, H - 13, p.dim, 2);
+  var r = 'SETAS OU ARRASTE';
+  drawText(r, W - textWidth(r, 2) - 4, H - 13, p.dim, 2);
+}
+
+function drawOverlay() {
+  var p = P();
+  var top = Y0 * CELL, height = (Y1 - Y0 + 1) * CELL;
+  var fw = (X1 - X0 + 1) * CELL;
+
+  if (state === STATE_READY) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, fw, height);
+    drawTextCentered('NOKIA\nMINHOQUINHA', top + 34, p.bright, 3);
+    drawTextCentered('TOQUE NAS SETAS PARA COMECAR', top + 92, p.alt, 2);
+    drawTextCentered('OU ARRASTE O DEDO NA TELA', top + 112, p.dim, 2);
+    drawTextCentered('CGA 480X270 - FULL HD 1920X1080', top + 140, p.dim, 1);
+  } else if (state === STATE_PAUSE) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, fw, height);
+    drawTextCentered('PAUSA', top + 70, p.bright, 4);
+    drawTextCentered('TOQUE NO II PARA VOLTAR', top + 120, p.alt, 2);
+  } else if (state === STATE_OVER) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, fw, height);
+    drawTextCentered('GAME OVER', top + 46, p.food, 4);
+    drawTextCentered('PONTOS ' + pad3(score), top + 92, p.bright, 2);
+    drawTextCentered('RECORDE ' + pad3(hi), top + 112, p.dim, 2);
+    drawTextCentered('TOQUE PARA JOGAR DE NOVO', top + 140, p.alt, 2);
+  } else if (state === STATE_WIN) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, fw, height);
+    drawTextCentered('VOCE VENCEU', top + 46, p.bright, 4);
+    drawTextCentered('A TELA TODA E SUA', top + 100, p.alt, 2);
+    drawTextCentered('TOQUE PARA JOGAR DE NOVO', top + 130, p.dim, 2);
+  }
+}
+
+function render() {
+  drawFrame();
+  if (state === STATE_PLAY || state === STATE_PAUSE) {
+    drawFood();
+    drawSnake();
+  }
+  drawHud();
+  drawOverlay();
+}
+
+/* ------------------------------- loop ----------------------------------- */
+function frame(now) {
+  if (!last) last = now;
+  var dt = now - last;
+  last = now;
+  if (dt > 250) dt = 250;
+  blink += dt;
+
+  if (state === STATE_PLAY) {
+    acc += dt;
+    var guard = 0;
+    while (acc >= stepMs && guard < 8) {
+      acc -= stepMs;
+      guard++;
+      tick();
+      if (state !== STATE_PLAY) { acc = 0; dirty = true; break; }
+    }
+  } else {
+    acc = 0;
+  }
+
+  // tela parada (titulo, pausa, fim) so redesenha quando muda: economiza bateria
+  if (state === STATE_PLAY || dirty) {
+    render();
+    dirty = false;
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ====================== LAYOUT (paisagem / retrato) ====================== */
+function fitCanvas() {
+  var bw = stage.clientWidth || Math.round(window.innerWidth * 0.7);
+  var bh = stage.clientHeight || Math.round(window.innerHeight * 0.7);
+  var s = Math.min(bw / W, bh / H);
+  if (!(s > 0)) s = 1;
+  var si = Math.floor(s);
+  if (si >= 1 && (s - si) < 0.25) s = si;   // pixel perfeito quando possivel
+  canvas.style.width = Math.floor(W * s) + 'px';
+  canvas.style.height = Math.floor(H * s) + 'px';
+}
+
+function layout() {
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  var landscape = vw >= vh;
+  var k;
+
+  if (landscape) {
+    k = Math.round(Math.min(vh * 0.27, vw * 0.20));      // tamanho do botao
+    pad.style.paddingRight = Math.round(vh * 0.035) + 'px';
+    pad.style.paddingBottom = '0px';
+  } else {
+    k = Math.round(Math.min(vw * 0.23, vh * 0.13));
+    pad.style.paddingRight = '0px';
+    pad.style.paddingBottom = Math.round(vh * 0.02) + 'px';
+  }
+  k = Math.max(42, Math.min(k, 110));                    // faixa utilizavel
+  pad.style.gridTemplateColumns = 'repeat(3,' + k + 'px)';
+  pad.style.gridTemplateRows = 'repeat(3,' + k + 'px)';
+  pad.style.gap = Math.round(k * 0.10) + 'px';
+
+  fitCanvas();
+  dirty = true;
+}
+
+/* --------------------- tela cheia / paisagem / tela acesa --------------- */
+function goFullscreen() {
+  try {
+    var el = document.documentElement;
+    if (!document.fullscreenElement && el && el.requestFullscreen) {
+      var pr = el.requestFullscreen();
+      if (pr && pr.catch) pr.catch(function () {});
+    }
+  } catch (e) {}
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      var p2 = screen.orientation.lock('landscape');
+      if (p2 && p2.catch) p2.catch(function () {});
+    }
+  } catch (e) {}
+}
+
+var wakeLock = null;
+function keepAwake() {
+  try {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; },
+                                                function () {});
+    }
+  } catch (e) {}
+}
+
+/* ------------------------------ controles ------------------------------- */
+function pressDir(x, y, btn) {
+  audioInit();
+  if (idle()) { goFullscreen(); newGame(); }
+  pushDir(x, y);
+  if (btn) {
+    btn.classList.add('on');
+    setTimeout(function () { btn.classList.remove('on'); }, 110);
+  }
+}
+
+function pressPause() {
+  audioInit();
+  if (state === STATE_PLAY || state === STATE_PAUSE) togglePause();
+  else { goFullscreen(); newGame(); }
+  syncPauseBtn();
+}
+
+function syncPauseBtn() {
+  var b = document.getElementById('b-pause');
+  if (!b) return;
+  if (state === STATE_PAUSE) b.classList.add('paused');
+  else b.classList.remove('paused');
+}
+
+function pressSound() {
+  audioInit();
+  muted = !muted;
+  var b = document.getElementById('b-sound');
+  if (b) { if (muted) b.classList.add('off'); else b.classList.remove('off'); }
+  if (!muted) beep(660, 0.05, 'square', 0.05);
+}
+
+function pressPalette() {
+  palIndex = (palIndex + 1) % PALETTES.length;
+  applyPaletteToPad();
+  dirty = true;
+}
+
+function applyPaletteToPad() {
+  var c = P().bright;
+  pad.style.color = c;
+  var b = document.getElementById('b-pal');
+  if (b) b.style.color = c;
+}
+
+// um toque = uma acao (sem esperar o click do navegador)
+function bind(el, fn) {
+  if (!el) return;
+  var handler = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    fn();
+  };
+  if (window.PointerEvent) {
+    el.addEventListener('pointerdown', handler, { passive: false });
+  } else {
+    el.addEventListener('touchstart', handler, { passive: false });
+    el.addEventListener('mousedown', handler);
+  }
+}
+
+function bindControls() {
+  bind(document.getElementById('b-up'),    function () { pressDir(0, -1, document.getElementById('b-up')); });
+  bind(document.getElementById('b-down'),  function () { pressDir(0, 1,  document.getElementById('b-down')); });
+  bind(document.getElementById('b-left'),  function () { pressDir(-1, 0, document.getElementById('b-left')); });
+  bind(document.getElementById('b-right'), function () { pressDir(1, 0,  document.getElementById('b-right')); });
+  bind(document.getElementById('b-pause'), pressPause);
+  bind(document.getElementById('b-sound'), pressSound);
+  bind(document.getElementById('b-pal'),   pressPalette);
+
+  // teclado (teste no PC ou teclado bluetooth)
+  document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    var handled = true;
+    switch (k) {
+      case 'arrowleft': case 'a': pressDir(-1, 0, null); break;
+      case 'arrowright': case 'd': pressDir(1, 0, null); break;
+      case 'arrowup': case 'w': pressDir(0, -1, null); break;
+      case 'arrowdown': case 's': pressDir(0, 1, null); break;
+      case ' ': case 'enter': pressPause(); break;
+      case 'p': case 'escape': pressPause(); break;
+      case 'm': pressSound(); break;
+      case '1': palIndex = 0; applyPaletteToPad(); dirty = true; break;
+      case '2': palIndex = 1; applyPaletteToPad(); dirty = true; break;
+      case '3': palIndex = 2; applyPaletteToPad(); dirty = true; break;
+      default:
+        if (e.code === 'Space') pressPause(); else handled = false;
+    }
+    if (handled && e.preventDefault) e.preventDefault();
+  }, { passive: false });
+
+  // arrastar na area do jogo tambem vira direcao
+  var tsx = 0, tsy = 0, touching = false, swiped = false;
+  bind2(canvas, 'touchstart', function (e) {
+    touching = true; swiped = false;
+    tsx = e.touches[0].clientX; tsy = e.touches[0].clientY;
+  });
+  bind2(canvas, 'touchmove', function (e) {
+    if (!touching) return;
+    var dx = e.touches[0].clientX - tsx, dy = e.touches[0].clientY - tsy;
+    if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+    audioInit();
+    if (idle()) { goFullscreen(); newGame(); }
+    if (Math.abs(dx) > Math.abs(dy)) pushDir(dx > 0 ? 1 : -1, 0);
+    else pushDir(0, dy > 0 ? 1 : -1);
+    swiped = true;
+    tsx = e.touches[0].clientX; tsy = e.touches[0].clientY;
+  });
+  bind2(canvas, 'touchend', function () {
+    touching = false;
+    if (!swiped && idle()) { goFullscreen(); newGame(); }
+  });
+}
+
+function bind2(el, type, fn) {
+  if (!el) return;
+  el.addEventListener(type, function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    fn(e);
+  }, { passive: false });
+}
+
+/* ------------------------------ start ----------------------------------- */
+window.addEventListener('resize', layout);
+window.addEventListener('orientationchange', function () { setTimeout(layout, 250); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', layout);
+window.addEventListener('load', layout);
+// no celular a area util muda depois do carregamento (barra de endereco,
+// rotacao): reajusta tambem quando a pagina termina de acomodar
+setTimeout(layout, 250);
+setTimeout(layout, 1000);
+
+// se a area do jogo mudar de tamanho sem evento de resize, reajusta o canvas
+// (garante que o jogo nunca estoure a tela)
+if (window.ResizeObserver) {
+  try {
+    new window.ResizeObserver(function () { fitCanvas(); }).observe(stage);
+  } catch (e) {}
+}
+
+snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+food = { x: 20, y: 8 };
+
+applyPaletteToPad();
+layout();
+bindControls();
+syncPauseBtn();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080c08">
+<title>ARCADE RETRÔ — escolha o jogo</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --verde: #55ff55;
+    --verde2: #9bbc0f;
+    --verde3: #00aa00;
+    --escuro: #0d1409;
+    --borda: #26301a;
+  }
+
+  html, body {
+    min-height:100%;
+    background:#080c08;
+    color:#cfe6a0;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    -webkit-text-size-adjust:100%;
+  }
+  body {
+    display:flex; flex-direction:column; align-items:center;
+    padding:clamp(14px, 3vh, 34px) clamp(12px, 4vw, 40px) 40px;
+    gap:clamp(14px, 2.5vh, 26px);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(85,255,85,.07), transparent 70%),
+      #080c08;
+  }
+
+  header { text-align:center; max-width:760px; }
+  h1 {
+    font-size:clamp(24px, 5vw, 42px);
+    letter-spacing:.14em;
+    color:var(--verde);
+    text-shadow:0 0 14px rgba(85,255,85,.35);
+    font-weight:800;
+  }
+  header .sub {
+    margin-top:8px; font-size:clamp(11px, 1.7vw, 14px);
+    color:#7f9a5a; letter-spacing:.06em;
+  }
+  #aparelho {
+    margin-top:14px; font-size:clamp(11px, 1.7vw, 13px);
+    color:#a9c97a; line-height:1.7;
+  }
+  #aparelho a { color:var(--verde2); }
+  #aparelho b { color:var(--verde); }
+
+  #lista {
+    width:100%; max-width:880px;
+    display:flex; flex-direction:column; gap:clamp(12px, 2vh, 20px);
+  }
+
+  .card {
+    display:flex; gap:clamp(12px, 2.5vw, 24px); align-items:center;
+    background:var(--escuro);
+    border:1px solid var(--borda);
+    border-radius:14px;
+    padding:clamp(12px, 2.4vw, 20px);
+    transition:border-color .15s, transform .15s, box-shadow .15s;
+  }
+  .card:hover {
+    border-color:var(--verde3);
+    transform:translateY(-2px);
+    box-shadow:0 8px 30px rgba(0,0,0,.5), 0 0 0 1px rgba(85,255,85,.12) inset;
+  }
+
+  .icone {
+    flex:0 0 auto; display:block;
+    image-rendering:pixelated;
+    background:#0a0f07;
+    border:1px solid var(--borda);
+    border-radius:8px;
+  }
+
+  .info { flex:1 1 auto; min-width:0; }
+  .info h2 {
+    font-size:clamp(17px, 2.6vw, 23px); letter-spacing:.1em;
+    color:var(--verde); font-weight:800;
+  }
+  .console {
+    display:inline-block; margin-top:6px;
+    font-size:clamp(9px, 1.3vw, 11px); letter-spacing:.12em;
+    padding:3px 8px; border-radius:20px;
+    border:1px solid var(--borda); color:var(--verde2);
+    background:#0a1006;
+  }
+  .info p {
+    margin-top:10px; font-size:clamp(11px, 1.6vw, 13px);
+    line-height:1.65; color:#9db874;
+  }
+  .teclas {
+    margin-top:8px !important;
+    color:#6f8a4c !important; font-size:clamp(10px, 1.4vw, 12px) !important;
+  }
+
+  .acoes {
+    flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:9px;
+  }
+  .jogar {
+    display:inline-block; text-decoration:none; text-align:center;
+    padding:13px 26px; border-radius:10px;
+    background:var(--verde); color:#04140a;
+    font-weight:800; letter-spacing:.12em;
+    font-size:clamp(12px, 1.8vw, 15px);
+    border:2px solid var(--verde);
+    transition:transform .1s, box-shadow .15s;
+    white-space:nowrap;
+  }
+  .jogar:hover { transform:scale(1.04); box-shadow:0 0 22px rgba(85,255,85,.35); }
+  .outra {
+    font-size:clamp(9px, 1.3vw, 11px); color:#6f8a4c; text-align:center;
+  }
+  .outra a { color:var(--verde2); }
+
+  footer {
+    max-width:880px; text-align:center;
+    font-size:clamp(10px, 1.4vw, 12px); color:#5f7742; line-height:1.8;
+  }
+  footer code { color:var(--verde2); }
+
+  /* telas estreitas: o cartao vira coluna */
+  @media (max-width: 620px) {
+    .card { flex-direction:column; align-items:stretch; text-align:center; }
+    .icone { align-self:center; }
+    .console { align-self:center; }
+    .acoes { align-items:stretch; }
+    .jogar { width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ARCADE RETR&#212;</h1>
+  <div class="sub">jogos cl&#225;ssicos recriados em pixels &middot; vers&#227;o de computador e de celular</div>
+  <div id="aparelho"></div>
+</header>
+
+<main id="lista"></main>
+
+<footer>
+  Cada jogo tem duas vers&#245;es: <b>computador</b> (teclado) e <b>celular</b> (bot&#245;es na tela).<br>
+  Para for&#231;ar uma delas, use <code>index.html?desktop=1</code> ou <code>index.html?mobile=1</code>.
+</footer>
+
+<script src="roteador.js"></script>
+<script>
+"use strict";
+(function () {
+
+  /* ==========================================================================
+     LISTA DE JOGOS
+     --------------------------------------------------------------------------
+     Para adicionar um jogo novo:
+       1. crie os arquivos  NOME-desktop.html  e  NOME-mobile.html
+          (copie um jogo existente como base e inclua <script src="roteador.js">
+           e, se o motor for compartilhado, o <script src="NOME.js">)
+       2. acrescente um item aqui embaixo, com o mesmo "id" do icone
+       3. pronto: o cardapio e o roteamento por aparelho ja funcionam
+     ========================================================================== */
+  var JOGOS = [
+    {
+      id: 'minhoquinha',
+      nome: 'MINHOQUINHA',
+      console: 'NOKIA 3310',
+      descricao: 'A cobrinha que come&#231;ou tudo: coma os pontos, cres&#231;a e n&#227;o bata na parede nem no pr&#243;prio corpo.',
+      desktop: 'minhoquinha-desktop.html',
+      mobile: 'minhoquinha-mobile.html',
+      teclasPc: 'Setas ou WASD &middot; P pausa &middot; 1/2/3 trocam as paletas CGA',
+      teclasCel: 'D-pad de 4 setas na tela &middot; arraste o dedo para virar'
+    },
+    {
+      id: 'tetris',
+      nome: 'TETRIS',
+      console: 'GAME BOY',
+      descricao: 'A tela verde de 160x144, tabuleiro 10x18, pr&#243;xima pe&#231;a, n&#237;veis e a m&#250;sica da carrocinha.',
+      desktop: 'tetris-desktop.html',
+      mobile: 'tetris-mobile.html',
+      teclasPc: '&#8592; &#8594; mover &middot; &#8595; descer &middot; X/Z girar &middot; ENTER pausa &middot; M som',
+      teclasCel: 'Bot&#245;es <b>B</b> e <b>A</b> giram &middot; setas movem e descem &middot; CENTRAL pausa'
+    },
+    {
+      id: 'pinball',
+      nome: 'PINBALL 3D',
+      console: 'FLIPERAMA',
+      descricao: '5 mesas retr&#244; 3D (Espa&#231;o, Fliperama, Selva, Pirata e Neon) com f&#237;sica real, multiball, po&#231;os e fun&#231;&#227;o tremer a mesa.',
+      desktop: 'pinball-desktop.html',
+      mobile: 'pinball-mobile.html',
+      teclasPc: '&#8592; &#8594; ou A/D flippers &middot; ESPA&#199;O lan&#231;ador &middot; Z/X tremer mesa &middot; 1 a 5 mesas',
+      teclasCel: '4 bot&#245;es t&#225;teis: flippers, lan&#231;ador de for&#231;a e tremer a mesa (nudge)'
+    },
+    {
+      id: 'space-invaders',
+      nome: 'SPACE INVADERS',
+      console: 'ARCADE 1978',
+      descricao: 'O cl&#225;ssico que definiu os videogames: 55 invasores marchando, 4 barreiras destrut&#237;veis, nave-m&#227;e misteriosa e o ritmo fren&#233;tico de 4 tons.',
+      desktop: 'space-invaders-desktop.html',
+      mobile: 'space-invaders-mobile.html',
+      teclasPc: '&#8592; &#8594; ou A/D mover &middot; ESPA&#199;O disparar &middot; P/ESC pausa &middot; M som &middot; ENTER come&#231;ar',
+      teclasCel: 'Bot&#245;es t&#225;teis &#9664; e &#9654; movem o canh&#227;o &middot; FIRE dispara &middot; PAUSA e SOM no topo'
+    }
+  ];
+
+  /* --------------------------- icones desenhados --------------------------- */
+  function pintarIcone(cv, id) {
+    var c = cv.getContext('2d');
+    var p = 10;                                  // tamanho do "pixel"
+    c.clearRect(0, 0, cv.width, cv.height);
+    function bloco(x, y, cor) { c.fillStyle = cor; c.fillRect(x * p, y * p, p, p); }
+
+    if (id === 'minhoquinha') {
+      // corpo da cobra + cabeca + comida, no verde da Nokia
+      var corpo = [[1,3],[2,3],[3,3],[4,3],[5,3],[5,2],[6,2]];
+      for (var i = 0; i < corpo.length; i++) bloco(corpo[i][0], corpo[i][1], i < 4 ? '#00aa00' : '#55ff55');
+      bloco(7, 2, '#55ff55');                     // cabeca
+      bloco(7, 2, '#55ff55');
+      c.fillStyle = '#000';                       // olho
+      c.fillRect(7 * p + 6, 2 * p + 2, 3, 3);
+      bloco(10, 4, '#ff5555');                    // comida
+      return;
+    }
+
+    if (id === 'tetris') {
+      // pecas na cor do Game Boy classico
+      var cor = '#9bbc0f';
+      [[2,1],[1,2],[2,2],[3,2]].forEach(function (b) { bloco(b[0], b[1], cor); });          // T
+      [[5,2],[6,2],[6,3],[7,3]].forEach(function (b) { bloco(b[0], b[1], cor); });          // S
+      [[9,1],[9,2],[9,3],[9,4]].forEach(function (b) { bloco(b[0], b[1], cor); });          // I
+      c.fillStyle = '#0f380f';
+      c.fillRect(0, 6 * p - 2, cv.width, 2);
+      return;
+    }
+
+    if (id === 'pinball') {
+      // bumpers coloridos em neon
+      [[3,1],[4,1],[3,2],[4,2]].forEach(function (b) { bloco(b[0], b[1], '#00e5ff'); });
+      [[7,1],[8,1],[7,2],[8,2]].forEach(function (b) { bloco(b[0], b[1], '#ff007f'); });
+      [[5,2],[6,2],[5,3],[6,3]].forEach(function (b) { bloco(b[0], b[1], '#ffd700'); });
+      // bola de aco no topo
+      bloco(5, 0, '#ffffff');
+      // flippers
+      [[2,5],[3,5],[4,4]].forEach(function (b) { bloco(b[0], b[1], '#55aaff'); });
+      [[9,5],[8,5],[7,4]].forEach(function (b) { bloco(b[0], b[1], '#55aaff'); });
+      // canal do lancador
+      bloco(11, 1, '#ff3366'); bloco(11, 2, '#ff3366'); bloco(11, 3, '#ff3366');
+      bloco(11, 4, '#ffffff');
+      return;
+    }
+
+    if (id === 'space-invaders') {
+      // Invasor Crab verde no centro
+      var alien = [
+        [4,0],[7,0],
+        [5,1],[6,1],
+        [4,2],[5,2],[6,2],[7,2],
+        [3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
+        [3,4],[5,4],[6,4],[8,4],
+        [2,3],[9,3],[2,2],[9,2],[2,4],[9,4]
+      ];
+      for (var ai = 0; ai < alien.length; ai++) bloco(alien[ai][0], alien[ai][1], '#55ff55');
+      // olhos
+      c.fillStyle = '#0a0f07';
+      c.fillRect(4 * p + 3, 3 * p + 2, 4, 5);
+      c.fillRect(7 * p + 3, 3 * p + 2, 4, 5);
+
+      // Canhão laser na base
+      [[5,5],[6,5],[4,5],[7,5]].forEach(function (b) { bloco(b[0], b[1], '#38bdf8'); });
+      bloco(5, 4, '#38bdf8'); bloco(6, 4, '#38bdf8');
+      // Projétil laser
+      bloco(5, 2, '#ffd700'); bloco(6, 2, '#ffffff');
+
+      // UFO Saucer vermelho
+      bloco(10, 0, '#ef4444'); bloco(11, 0, '#ef4444');
+      bloco(1, 0, '#f43f5e');
+      return;
+    }
+
+    // reserva: reticulo generico
+    for (var y = 0; y < 6; y++) for (var x = 0; x < 12; x++) if ((x + y) % 3 === 0) bloco(x, y, '#26301a');
+  }
+
+  /* ------------------------------- montagem -------------------------------- */
+  var ehMobile = (typeof window.detectarMobile === 'function') ? window.detectarMobile() : false;
+  var forcado = '';
+  if (typeof window.forcaDesktop === 'function' && window.forcaDesktop()) forcado = '?desktop=1';
+  else if (typeof window.forcaMobile === 'function' && window.forcaMobile()) forcado = '?mobile=1';
+
+  var lista = document.getElementById('lista');
+
+  JOGOS.forEach(function (j) {
+    var recomendado = ehMobile ? j.mobile : j.desktop;
+    var outro = ehMobile ? j.desktop : j.mobile;
+    var outroForcado = (ehMobile ? '?desktop=1' : '?mobile=1');
+    var dicas = ehMobile ? j.teclasCel : j.teclasPc;
+
+    var card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML =
+      '<canvas class="icone" width="120" height="60"></canvas>' +
+      '<div class="info">' +
+        '<h2>' + j.nome + '</h2>' +
+        '<span class="console">' + j.console + '</span>' +
+        '<p>' + j.descricao + '</p>' +
+        '<p class="teclas">' + dicas + '</p>' +
+      '</div>' +
+      '<div class="acoes">' +
+        '<a class="jogar" href="' + recomendado + forcado + '">JOGAR</a>' +
+        '<span class="outra">ou a <a href="' + outro + outroForcado + '">' +
+          (ehMobile ? 'vers&#227;o de computador' : 'vers&#227;o de celular') + '</a></span>' +
+      '</div>';
+
+    pintarIcone(card.querySelector('canvas'), j.id);
+    lista.appendChild(card);
+  });
+
+  var aparelho = document.getElementById('aparelho');
+  var troca = ehMobile ? '?desktop=1' : '?mobile=1';
+  var rotulo = ehMobile ? 'vers&#245;es de computador' : 'vers&#245;es de celular';
+  aparelho.innerHTML =
+    (ehMobile
+      ? 'Voc&#234; est&#225; no <b>celular ou tablet</b> &mdash; os bot&#245;es JOGAR abrem as vers&#245;es com controles na tela.'
+      : 'Voc&#234; est&#225; no <b>computador</b> &mdash; os bot&#245;es JOGAR abrem as vers&#245;es com teclado.') +
+    ' <a href="index.html' + troca + '">ver as ' + rotulo + '</a>';
+})();
+</script>
+</body>
+</html>

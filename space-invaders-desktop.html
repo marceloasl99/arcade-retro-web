@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<title>SPACE INVADERS — Computador</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#05070f; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ------------------- ESTRUTURA GERAL ARCADE ------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0c1222 0%, #05070f 100%);
+  }
+
+  /* Painéis laterais retro */
+  .painel-lateral {
+    width:320px; flex-shrink:0; height:100%; display:flex; flex-direction:column;
+    gap:14px; padding:18px 16px; background:rgba(8,12,22,0.85);
+    border-right:1px solid rgba(56,189,248,0.18);
+    backdrop-filter:blur(8px); z-index:10; overflow-y:auto;
+  }
+  #painel-dir {
+    border-right:none; border-left:1px solid rgba(56,189,248,0.18);
+  }
+
+  #voltar-link {
+    color:#38bdf8; text-decoration:none; font-size:11px; font-weight:800;
+    letter-spacing:0.12em; display:inline-flex; align-items:center; gap:6px;
+    transition:transform 0.15s, color 0.15s;
+  }
+  #voltar-link:hover { color:#7dd3fc; transform:translateX(-3px); }
+
+  @media (max-width: 1080px) {
+    .painel-lateral { display:none; }
+  }
+
+  /* Container central da arena */
+  #arena-container {
+    flex:1; height:100%; position:relative; display:flex;
+    align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(0,0,0,0.85);
+  }
+
+  #tela {
+    display:block; width:100%; height:100%; object-fit:contain;
+    cursor:pointer;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(16,25,44,0.7) 0%, rgba(10,16,28,0.85) 100%);
+    border:1px solid rgba(56,189,248,0.22); border-radius:12px;
+    padding:12px 14px; box-shadow:0 4px 18px rgba(0,0,0,0.5);
+  }
+
+  .card-titulo {
+    font-size:10px; font-weight:800; letter-spacing:0.16em; color:#94a3b8;
+    text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+
+  /* Tabela de pontuação visual */
+  .tabela-pontos {
+    display:flex; flex-direction:column; gap:8px; margin-top:6px;
+    font-size:11px;
+  }
+  .linha-ponto {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 6px; border-radius:6px; background:rgba(255,255,255,0.03);
+  }
+  .linha-ponto .alvo-rotulo { display:flex; align-items:center; gap:8px; font-weight:700; }
+  .ponto-val { font-weight:800; }
+
+  /* Telemetria */
+  .telemetria-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;
+  }
+  .tele-item {
+    background:rgba(255,255,255,0.03); padding:6px 8px; border-radius:6px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .tele-rotulo { font-size:9px; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; }
+  .tele-val { font-size:14px; font-weight:800; color:#38bdf8; margin-top:2px; }
+
+  /* Hall da Fama */
+  .ranking-linha {
+    display:flex; justify-content:space-between; padding:5px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06); font-size:11px;
+  }
+  .ranking-linha:last-child { border-bottom:none; }
+  .ranking-nome { color:#e2e8f0; font-weight:700; }
+  .ranking-pts { color:#facc15; font-weight:800; }
+
+  /* Botões utilitários */
+  .botoes-coluna { display:flex; flex-direction:column; gap:8px; }
+  .btn-acao {
+    width:100%; padding:10px; border-radius:8px; border:1px solid rgba(56,189,248,0.4);
+    background:linear-gradient(180deg, #1e293b, #0f172a); color:#f8fafc;
+    font-family:inherit; font-size:11px; font-weight:800; letter-spacing:0.12em;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background 0.15s, border-color 0.15s, transform 0.05s;
+  }
+  .btn-acao:hover { border-color:#38bdf8; transform:translateY(-1px); }
+  .btn-acao:active { transform:translateY(1px); }
+  .btn-principal {
+    background:linear-gradient(180deg, #0284c7, #0369a1); border-color:#38bdf8;
+    box-shadow:0 0 16px rgba(56,189,248,0.35);
+  }
+
+  /* Guia de Teclas */
+  .tecla-linha {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:4px 0; font-size:11px; border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .tecla-linha:last-child { border-bottom:none; }
+  .kbd-chip {
+    background:#1e293b; border:1px solid #475569; border-radius:4px;
+    padding:2px 6px; font-size:10px; font-weight:700; color:#38bdf8;
+    box-shadow:0 1px 0 rgba(255,255,255,0.2);
+  }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+  <!-- PAINEL LATERAL ESQUERDO -->
+  <aside class="painel-lateral">
+    <a id="voltar-link" href="index.html">&larr; VOLTAR AOS JOGOS</a>
+
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>SPACE INVADERS</span>
+        <span style="color:#55ff55;">TAITO 1978</span>
+      </div>
+      <p style="font-size:11px; line-height:1.5; color:#94a3b8;">
+        Defenda a Terra da invasão! Elimine as 5 fileiras de alienígenas antes que alcancem o solo e use os 4 bunkers como cobertura.
+      </p>
+    </div>
+
+    <!-- Tabela de Invasores -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>TABELA DE ALVOS</span>
+        <span style="color:#facc15;">PONTUAÇÃO</span>
+      </div>
+      <div class="tabela-pontos">
+        <div class="linha-ponto">
+          <span class="alvo-rotulo" style="color:#ef4444;">🛸 NAVE-MÃE (UFO)</span>
+          <span class="ponto-val" style="color:#ef4444;">50 - 300</span>
+        </div>
+        <div class="linha-ponto">
+          <span class="alvo-rotulo" style="color:#f43f5e;">👾 SQUID (LULA)</span>
+          <span class="ponto-val" style="color:#f43f5e;">30 PTS</span>
+        </div>
+        <div class="linha-ponto">
+          <span class="alvo-rotulo" style="color:#38bdf8;">🦀 CRAB (CARANGUEJO)</span>
+          <span class="ponto-val" style="color:#38bdf8;">20 PTS</span>
+        </div>
+        <div class="linha-ponto">
+          <span class="alvo-rotulo" style="color:#55ff55;">🐙 OCTOPUS (POLVO)</span>
+          <span class="ponto-val" style="color:#55ff55;">10 PTS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telemetria em tempo real -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>TELEMETRIA DA BATALHA</span>
+      </div>
+      <div class="telemetria-grid">
+        <div class="tele-item">
+          <div class="tele-rotulo">Invasores</div>
+          <div id="tele-aliens" class="tele-val">55 / 55</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo">Onda Atual</div>
+          <div id="tele-onda" class="tele-val">1</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo">Vidas</div>
+          <div id="tele-vidas" class="tele-val" style="color:#55ff55;">3</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo">Status</div>
+          <div id="tele-status" class="tele-val" style="font-size:11px;">PRONTO</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ARENA CENTRAL DO JOGO -->
+  <main id="arena-container">
+    <canvas id="tela" width="480" height="640"></canvas>
+  </main>
+
+  <!-- PAINEL LATERAL DIREITO -->
+  <aside id="painel-dir" class="painel-lateral">
+    <!-- Hall da Fama -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>HALL DA FAMA</span>
+        <span style="color:#facc15;">TOP SCORES</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">1. TAI</span>
+        <span id="rank-top" class="ranking-pts">099.900</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">2. ARC</span>
+        <span class="ranking-pts">074.200</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">3. INV</span>
+        <span class="ranking-pts">052.800</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">4. LAS</span>
+        <span class="ranking-pts">038.400</span>
+      </div>
+      <div class="ranking-linha">
+        <span class="ranking-nome">5. VOCÊ</span>
+        <span id="rank-voce" class="ranking-pts">000.000</span>
+      </div>
+    </div>
+
+    <!-- Comandos e Ações -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>CONTROLES DA NAVE</span>
+      </div>
+      <div class="botoes-coluna">
+        <button id="btn-jogar" class="btn-acao btn-principal" type="button">
+          🚀 INICIAR / REINICIAR
+        </button>
+        <button id="btn-pausa" class="btn-acao" type="button">
+          ⏸ PAUSAR (P)
+        </button>
+        <button id="btn-som" class="btn-acao" type="button">
+          🔊 SOM: ATIVADO (M)
+        </button>
+      </div>
+    </div>
+
+    <!-- Guia de Teclas do Teclado -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>ATALHOS DO TECLADO</span>
+      </div>
+      <div class="tecla-linha">
+        <span>Mover Canhão</span>
+        <div><span class="kbd-chip">&larr; &rarr;</span> ou <span class="kbd-chip">A / D</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span>Disparar Laser</span>
+        <div><span class="kbd-chip">ESPAÇO</span> ou <span class="kbd-chip">&uarr;</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span>Iniciar Partida</span>
+        <div><span class="kbd-chip">ENTER</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span>Pausar</span>
+        <div><span class="kbd-chip">P</span> ou <span class="kbd-chip">ESC</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span>Ligar / Mudar Som</span>
+        <div><span class="kbd-chip">M</span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="roteador.js"></script>
+<script src="space-invaders.js"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  if (typeof window.criarSpaceInvaders !== 'function') {
+    alert('Erro: arquivo space-invaders.js não encontrado.');
+    return;
+  }
+
+  var teleAliens = document.getElementById('tele-aliens');
+  var teleOnda = document.getElementById('tele-onda');
+  var teleVidas = document.getElementById('tele-vidas');
+  var teleStatus = document.getElementById('tele-status');
+  var rankVoce = document.getElementById('rank-voce');
+  var rankTop = document.getElementById('rank-top');
+  var btnPausa = document.getElementById('btn-pausa');
+  var btnSom = document.getElementById('btn-som');
+
+  var jogo = window.criarSpaceInvaders(canvas, {
+    aoAtualizar: function (d) {
+      if (teleAliens) teleAliens.textContent = (d.aliensVivos !== undefined ? d.aliensVivos : 55) + ' / 55';
+      if (teleOnda) teleOnda.textContent = d.onda || 1;
+      if (teleVidas) teleVidas.textContent = Math.max(0, d.vidas !== undefined ? d.vidas : 3);
+      if (teleStatus) teleStatus.textContent = d.estado ? d.estado.toUpperCase() : 'PRONTO';
+      if (rankVoce) rankVoce.textContent = String(d.pontos || 0).padStart(6, '0');
+      if (rankTop) rankTop.textContent = String(Math.max(99900, d.recorde || 0)).padStart(6, '0');
+      if (btnPausa) btnPausa.textContent = d.pausado ? '▶ CONTINUAR (P)' : '⏸ PAUSAR (P)';
+      if (btnSom) btnSom.textContent = d.som ? '🔊 SOM: ATIVADO (M)' : '🔇 SOM: MUDO (M)';
+    }
+  });
+
+  jogo.iniciar();
+
+  /* ------------------- TECLADO ------------------- */
+  window.addEventListener('keydown', function (e) {
+    var k = e.key.toLowerCase();
+    if (['arrowleft', 'arrowright', ' ', 'arrowup', 'arrowdown'].indexOf(k) >= 0) {
+      e.preventDefault();
+    }
+    if (k === 'arrowleft' || k === 'a') jogo.entrada.esquerda(true);
+    if (k === 'arrowright' || k === 'd') jogo.entrada.direita(true);
+    if (k === ' ' || k === 'arrowup') jogo.entrada.disparar(true);
+    if (k === 'enter' && !e.repeat) jogo.acao('comecar');
+    if ((k === 'p' || k === 'escape') && !e.repeat) jogo.acao('pausa');
+    if (k === 'm' && !e.repeat) jogo.acao('som');
+  }, { passive: false });
+
+  window.addEventListener('keyup', function (e) {
+    var k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') jogo.entrada.esquerda(false);
+    if (k === 'arrowright' || k === 'd') jogo.entrada.direita(false);
+    if (k === ' ' || k === 'arrowup') jogo.entrada.disparar(false);
+  });
+
+  /* ------------------- CLIQUES NOS BOTÕES ------------------- */
+  document.getElementById('btn-jogar').addEventListener('click', function () {
+    jogo.acao('comecar');
+  });
+  document.getElementById('btn-pausa').addEventListener('click', function () {
+    jogo.acao('pausa');
+  });
+  document.getElementById('btn-som').addEventListener('click', function () {
+    jogo.acao('som');
+  });
+  canvas.addEventListener('click', function () {
+    var d = jogo.dados();
+    if (d.estado === 'title' || d.estado === 'gameover') {
+      jogo.acao('comecar');
+    }
+  });
+
+  window.addEventListener('blur', function () {
+    jogo.entrada.esquerda(false);
+    jogo.entrada.direita(false);
+    jogo.entrada.disparar(false);
+  });
+})();
+</script>
+</body>
+</html>

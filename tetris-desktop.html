@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f0a">
+<title>TETRIS — Game Boy</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    height:100%; background:#080c08; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+  }
+  body {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(8px, 1.6vh, 18px);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#9BBC0F;
+  }
+
+  #tela {
+    display:block;
+    image-rendering:pixelated;
+    image-rendering:-moz-crisp-edges;
+    image-rendering:crisp-edges;
+    background:#9BBC0F;
+    box-shadow: 0 0 0 2px #0f380f, 0 0 0 4px #26301a, 0 0 46px rgba(155,188,15,.22);
+  }
+
+  #ajuda {
+    text-align:center; line-height:1.75;
+    font-size:clamp(10px, 1.5vh, 14px);
+    opacity:.92; max-width:96vw;
+  }
+  #ajuda b { color:#c6db2b; font-weight:700; }
+  #ajuda .sep { opacity:.45; padding:0 .35em; }
+
+  #voltar {
+    position:fixed; top:10px; left:14px; z-index:5;
+    font-size:clamp(10px, 1.4vh, 13px); color:#9BBC0F; text-decoration:none;
+    opacity:.65; letter-spacing:.5px;
+  }
+  #voltar:hover { opacity:1; }
+
+  #rodape { position:fixed; bottom:8px; right:14px; font-size:11px; opacity:.45; }
+</style>
+</head>
+<body>
+<a id="voltar" href="index.html">&larr; JOGOS</a>
+
+<canvas id="tela" width="160" height="144"></canvas>
+
+<div id="ajuda">
+  <b>&larr; &rarr;</b> mover <span class="sep">|</span>
+  <b>&darr;</b> descer rapido <span class="sep">|</span>
+  <b>X</b> ou <b>&uarr;</b> girar <span class="sep">|</span>
+  <b>Z</b> girar ao contrario <span class="sep">|</span>
+  <b>ENTER</b> comecar/pausar<br>
+  <b>M</b> som <span class="sep">|</span>
+  <b>2</b> cores <span class="sep">|</span>
+  <b>F</b> tela cheia <span class="sep">|</span>
+  no titulo, <b>&uarr; &darr;</b> escolhem o nivel
+</div>
+
+<div id="rodape">Game Boy &middot; 160x144 &middot; 10x18</div>
+
+<script src="roteador.js"></script>
+<script src="tetris.js"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;      // o roteador esta trocando de versao
+
+  var canvas = document.getElementById('tela');
+
+  // se o motor nao carregou, avisa em vez de ficar mudo
+  if (typeof window.criarTetris !== 'function') {
+    document.getElementById('ajuda').innerHTML =
+      '<b>Faltou o arquivo tetris.js</b> na mesma pasta desta pagina.';
+    return;
+  }
+
+  var jogo = window.criarTetris(canvas, {});
+
+  /* ------------------------- escala da tela do GB ------------------------- */
+  function ajustar() {
+    var ajuda = document.getElementById('ajuda');
+    var alturaTexto = ajuda ? ajuda.offsetHeight + 70 : 90;
+    var dispL = window.innerWidth - 48;
+    var dispA = window.innerHeight - alturaTexto;
+    var s = Math.min(dispL / 160, dispA / 144);
+    if (!(s > 0)) s = 1;
+    // usa fator inteiro quando a sobra e pequena (pixel perfeito)
+    var si = Math.floor(s);
+    if (si >= 1 && (s - si) < 0.25) s = si;
+    canvas.style.width = Math.floor(160 * s) + 'px';
+    canvas.style.height = Math.floor(144 * s) + 'px';
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+
+  /* ------------------------------ controles ------------------------------ */
+  function segurar(esq, dir, baixo) {
+    if (esq !== null) jogo.entrada.esquerda = esq;
+    if (dir !== null) jogo.entrada.direita = dir;
+    if (baixo !== null) jogo.entrada.baixo = baixo;
+  }
+  function soltarTudo() { segurar(false, false, false); }
+  window.addEventListener('blur', soltarTudo);
+
+  document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    var tratado = true;
+    switch (k) {
+      case 'arrowleft': case 'a': jogo.entrada.esquerda = true; break;
+      case 'arrowright': case 'd': jogo.entrada.direita = true; break;
+      case 'arrowdown': case 's':
+        if (jogo.estadoAtual() === 'titulo') jogo.acao('nivel-');
+        else jogo.entrada.baixo = true;
+        break;
+      case 'arrowup':
+        if (jogo.estadoAtual() === 'titulo') jogo.acao('nivel+');
+        else jogo.girar(1);
+        break;
+      case 'x': case 'k': case 'w': jogo.girar(1); break;      // botao A do Game Boy
+      case 'z': case 'j': case 'control': jogo.girar(-1); break; // botao B
+      case 'enter': case ' ':
+        if (jogo.estadoAtual() === 'fim') jogo.acao('start');
+        else jogo.acao('pausa');
+        break;
+      case 'p': case 'escape': jogo.acao('pausa'); break;
+      case 'm': jogo.acao('som'); break;
+      case '2': case 'c': jogo.acao('paleta'); break;
+      case 'f':
+        try {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) {
+            var pr = document.documentElement.requestFullscreen();
+            if (pr && pr.catch) pr.catch(function () {});
+          }
+        } catch (err) {}
+        break;
+      default:
+        if (e.code === 'Space') jogo.acao('pausa');
+        else tratado = false;
+    }
+    if (tratado && e.preventDefault) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('keyup', function (e) {
+    var k = (e.key || '').toLowerCase();
+    if (k === 'arrowleft' || k === 'a') jogo.entrada.esquerda = false;
+    if (k === 'arrowright' || k === 'd') jogo.entrada.direita = false;
+    if (k === 'arrowdown' || k === 's') jogo.entrada.baixo = false;
+  });
+
+  // clique na tela tambem comeca / despausa
+  canvas.addEventListener('click', function () {
+    if (jogo.estadoAtual() === 'titulo' || jogo.estadoAtual() === 'fim') jogo.acao('start');
+    else jogo.acao('pausa');
+  });
+
+  ajustar();
+  window.addEventListener('load', ajustar);
+  jogo.iniciar();
+})();
+</script>
+</body>
+</html>

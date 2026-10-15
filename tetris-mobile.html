@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#080c08">
+<title>TETRIS — Game Boy (celular)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#080c08; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#9BBC0F;
+    --k: 86px;                 /* tamanho base dos botoes (calculado por JS) */
+  }
+
+  #app {
+    position:relative; width:100vw; height:100vh;
+    display:flex; flex-direction:row;          /* PAISAGEM: jogo a esquerda */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  #palco { flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden; }
+  #tela {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    display:block; background:#9BBC0F;
+    image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
+    box-shadow: 0 0 0 2px #0f380f, 0 0 0 4px #26301a;
+  }
+
+  /* ---------------------------- controles ------------------------------- */
+  #controles {
+    flex:0 0 auto; align-self:center;
+    display:flex; flex-direction:column; align-items:center;
+    gap:calc(var(--k) * .14);
+    padding:0 6px;
+  }
+  .linha { display:flex; gap:calc(var(--k) * .13); align-items:center; justify-content:center; }
+
+  .botao {
+    width:var(--k); height:var(--k);
+    display:flex; align-items:center; justify-content:center;
+    background:#16220c; border:3px solid #9BBC0F; border-radius:14px;
+    color:#9BBC0F; outline:none; cursor:pointer;
+    transition:transform .05s linear, background-color .05s linear;
+    padding:0;
+  }
+  .botao .arw { width:50%; height:50%; fill:#9BBC0F; display:block; }
+  .botao .letra { font:bold calc(var(--k) * .42)/1 ui-monospace, monospace; color:#9BBC0F; }
+  .botao.on, .botao:active { background:#9BBC0F; transform:scale(.94); }
+  .botao.on .arw, .botao:active .arw { fill:#16220c; }
+  .botao.on .letra, .botao:active .letra { color:#16220c; }
+
+  /* giros: botoes redondos como os do Game Boy (B a esquerda, A a direita) */
+  .giro { width:calc(var(--k) * 1.02); height:calc(var(--k) * 1.02); border-radius:50%; }
+
+  /* botoes pequenos */
+  .pequeno {
+    width:calc(var(--k) * .74); height:calc(var(--k) * .56);
+    border-width:2px; border-radius:9px; opacity:.8;
+  }
+  .pequeno .rot { font:bold calc(var(--k) * .17)/1 ui-monospace, monospace; letter-spacing:.5px; }
+  .pequeno .arw { width:52%; height:52%; }
+  .pequeno:active { opacity:1; }
+  #b-som.off { opacity:.35; }
+
+  #b-pausa .ic-play { display:none; }
+  #b-pausa.pausado .ic-pause { display:none; }
+  #b-pausa.pausado .ic-play { display:block; }
+
+  #voltar {
+    position:absolute; top:6px; left:8px; z-index:20;
+    font-size:12px; color:#9BBC0F; text-decoration:none; opacity:.55;
+    padding:4px 6px;
+  }
+  #voltar:active { opacity:1; }
+
+  #dica {
+    display:none; position:fixed; top:0; left:0; right:0; z-index:30;
+    padding:4px 8px; text-align:center; background:#16220c; color:#9BBC0F;
+    font-size:12px; font-weight:bold; border-bottom:1px solid #9BBC0F;
+  }
+
+  /* RETRATO: jogo em cima, controles embaixo (o jogo e feito para paisagem) */
+  @media (orientation: portrait) {
+    #app { flex-direction:column; }
+    #palco { flex:1 1 auto; margin-top:22px; }
+    #controles { padding-bottom:10px; }
+    #dica { display:block; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <a id="voltar" href="index.html">&larr; JOGOS</a>
+  <div id="palco"><canvas id="tela" width="160" height="144"></canvas></div>
+
+  <div id="controles">
+    <!-- giram a peca (B = anti-horario, A = horario, como no Game Boy) -->
+    <div class="linha">
+      <button class="botao giro" id="b-b" aria-label="Girar ao contrario">
+        <span class="letra">B</span>
+      </button>
+      <button class="botao giro" id="b-a" aria-label="Girar">
+        <span class="letra">A</span>
+      </button>
+    </div>
+
+    <!-- mover e descer -->
+    <div class="linha">
+      <button class="botao" id="b-esq" aria-label="Esquerda">
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+      </button>
+      <button class="botao" id="b-baixo" aria-label="Descer">
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+      </button>
+      <button class="botao" id="b-dir" aria-label="Direita">
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 18 L3 18 Z"/></svg>
+      </button>
+    </div>
+
+    <!-- som, pausa e cores -->
+    <div class="linha">
+      <button class="botao pequeno" id="b-som" aria-label="Ligar ou desligar o som">
+        <svg class="arw" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9 L9 9 L14 5 L14 19 L9 15 L4 15 Z"/>
+          <path d="M17 8 Q20.5 12 17 16" fill="none" stroke="#9BBC0F" stroke-width="2"/>
+        </svg>
+      </button>
+      <button class="botao pequeno" id="b-pausa" aria-label="Pausar ou comecar">
+        <svg class="arw ic-pause" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/>
+        </svg>
+        <svg class="arw ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 L20 12 L7 20 Z"/></svg>
+      </button>
+      <button class="botao pequeno" id="b-cor" aria-label="Trocar as cores">
+        <span class="rot">COR</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="dica">GIRE O APARELHO &#8635; MELHOR NA HORIZONTAL</div>
+
+<script src="roteador.js"></script>
+<script src="tetris.js"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;      // o roteador esta trocando de versao
+
+  var canvas = document.getElementById('tela');
+  var palco = document.getElementById('palco');
+
+  if (typeof window.criarTetris !== 'function') {
+    palco.innerHTML = '<p style="color:#9BBC0F;padding:16px;font-size:14px">' +
+      'Faltou o arquivo <b>tetris.js</b> na mesma pasta desta pagina.</p>';
+    return;
+  }
+
+  /* ----------------------- botoes e estado da tela ------------------------ */
+  var bA = document.getElementById('b-a');
+  var bB = document.getElementById('b-b');
+  var bEsq = document.getElementById('b-esq');
+  var bDir = document.getElementById('b-dir');
+  var bBaixo = document.getElementById('b-baixo');
+  var bPausa = document.getElementById('b-pausa');
+  var bSom = document.getElementById('b-som');
+  var bCor = document.getElementById('b-cor');
+
+  function sincronizar() {
+    if (!bPausa || !bSom) return;
+    var d = jogo.dados();
+    bPausa.classList.toggle('pausado', d.estado === 'pausado' || d.estado === 'titulo' || d.estado === 'fim');
+    bSom.classList.toggle('off', !d.som);
+  }
+
+  var jogo = window.criarTetris(canvas, {
+    // o botao de pausa acompanha o estado do jogo em qualquer mudanca
+    aoMudarEstado: function () { sincronizar(); }
+  });
+
+  /* ------------------------------- layout -------------------------------- */
+  function ajustar() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var paisagem = vw >= vh;
+    var k;
+
+    if (paisagem) k = Math.min(vh * 0.245, vw * 0.105);
+    else k = Math.min(vw * 0.215, vh * 0.105);
+    k = Math.max(42, Math.min(k, 108));
+    document.documentElement.style.setProperty('--k', Math.round(k) + 'px');
+
+    // a tela do Game Boy ocupa o espaco que sobra, com uma folga nas bordas
+    var bw = palco.clientWidth || Math.round(vw * 0.6);
+    var bh = palco.clientHeight || Math.round(vh * 0.6);
+    var s = Math.min((bw - 14) / 160, (bh - 14) / 144);
+    if (!(s > 0)) s = 1;
+    var si = Math.floor(s);
+    if (si >= 1 && (s - si) < 0.25) s = si;
+    canvas.style.width = Math.floor(160 * s) + 'px';
+    canvas.style.height = Math.floor(144 * s) + 'px';
+  }
+
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 250); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', ajustar);
+  window.addEventListener('load', ajustar);
+  setTimeout(ajustar, 250);
+  setTimeout(ajustar, 1000);
+  if (window.ResizeObserver) {
+    try { new window.ResizeObserver(function () { ajustar(); }).observe(palco); } catch (e) {}
+  }
+
+  /* ------------------------------ controles ------------------------------ */
+  // um toque = uma acao
+  function pulso(el, fn) {
+    if (!el) return;
+    el.addEventListener('pointerdown', function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      el.classList.add('on');
+      fn();
+      sincronizar();
+    }, { passive: false });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) {
+      el.addEventListener(t, function () { el.classList.remove('on'); });
+    });
+  }
+
+  // segurar para repetir (mover e descer)
+  function segurar(el, campo) {
+    if (!el) return;
+    el.addEventListener('pointerdown', function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      el.classList.add('on');
+      jogo.entrada[campo] = true;
+    }, { passive: false });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) {
+      el.addEventListener(t, function () { el.classList.remove('on'); jogo.entrada[campo] = false; });
+    });
+  }
+  function soltarTudo() {
+    jogo.entrada.esquerda = false;
+    jogo.entrada.direita = false;
+    jogo.entrada.baixo = false;
+    [bEsq, bDir, bBaixo, bA, bB].forEach(function (b) { if (b) b.classList.remove('on'); });
+  }
+  document.addEventListener('pointerup', soltarTudo);
+  document.addEventListener('pointercancel', soltarTudo);
+  window.addEventListener('blur', soltarTudo);
+
+  pulso(bA, function () { jogo.girar(1); });
+  pulso(bB, function () { jogo.girar(-1); });
+  pulso(bPausa, function () {
+    var e = jogo.estadoAtual();
+    if (e === 'titulo' || e === 'fim') jogo.acao('start');
+    else jogo.acao('pausa');
+  });
+  pulso(bSom, function () { jogo.acao('som'); });
+  pulso(bCor, function () { jogo.acao('paleta'); });
+  segurar(bEsq, 'esquerda');
+  segurar(bDir, 'direita');
+  segurar(bBaixo, 'baixo');
+
+  // tocar na tela do jogo comeca / pausa
+  canvas.addEventListener('pointerdown', function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var es = jogo.estadoAtual();
+    if (es === 'titulo' || es === 'fim') jogo.acao('start');
+    else jogo.acao('pausa');
+    sincronizar();
+  }, { passive: false });
+
+  // teclado (teste no PC ou teclado bluetooth)
+  document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    var tratado = true;
+    switch (k) {
+      case 'arrowleft': case 'a': jogo.entrada.esquerda = true; break;
+      case 'arrowright': case 'd': jogo.entrada.direita = true; break;
+      case 'arrowdown': case 's':
+        if (jogo.estadoAtual() === 'titulo') jogo.acao('nivel-'); else jogo.entrada.baixo = true;
+        break;
+      case 'arrowup': case 'x': case 'w':
+        if (jogo.estadoAtual() === 'titulo') jogo.acao('nivel+'); else jogo.girar(1);
+        break;
+      case 'z': jogo.girar(-1); break;
+      case 'enter': case ' ': case 'p':
+        if (jogo.estadoAtual() === 'titulo' || jogo.estadoAtual() === 'fim') jogo.acao('start');
+        else jogo.acao('pausa');
+        break;
+      case 'm': jogo.acao('som'); break;
+      case '2': case 'c': jogo.acao('paleta'); break;
+      default:
+        if (e.code === 'Space') jogo.acao('pausa'); else tratado = false;
+    }
+    if (tratado && e.preventDefault) e.preventDefault();
+    sincronizar();
+  }, { passive: false });
+
+  document.addEventListener('keyup', function (e) {
+    var k = (e.key || '').toLowerCase();
+    if (k === 'arrowleft' || k === 'a') jogo.entrada.esquerda = false;
+    if (k === 'arrowright' || k === 'd') jogo.entrada.direita = false;
+    if (k === 'arrowdown' || k === 's') jogo.entrada.baixo = false;
+  });
+
+  ajustar();
+  sincronizar();
+  jogo.iniciar();
+})();
+</script>
+</body>
+</html>

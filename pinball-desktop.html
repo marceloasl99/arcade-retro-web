@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
+<title>PINBALL 3D — Computador</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#05070d; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#dfe9ff; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ---------------------- ESTRUTURA GERAL ARCADE ---------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0d1222 0%, #05070d 100%);
+  }
+
+  /* Painéis laterais retro */
+  .painel-lateral {
+    width:320px; flex-shrink:0; height:100%; display:flex; flex-direction:column;
+    gap:14px; padding:18px 16px; background:rgba(8,12,22,0.85);
+    border-right:1px solid rgba(80,140,255,0.18);
+    backdrop-filter:blur(8px); z-index:10; overflow-y:auto;
+  }
+  #painel-dir {
+    border-right:none; border-left:1px solid rgba(80,140,255,0.18);
+  }
+
+  #voltar-compacto {
+    display:none; pointer-events:auto; color:#94a3b8; text-decoration:none;
+    font-size:10px; font-weight:800; letter-spacing:0.12em; margin-bottom:4px;
+    transition:color 0.15s;
+  }
+  #voltar-compacto:hover { color:#38bdf8; }
+
+  @media (max-width: 1080px) {
+    .painel-lateral { display:none; }
+    #voltar-compacto { display:inline-block; }
+  }
+
+  /* Container central da mesa */
+  #mesa-container {
+    flex:1; height:100%; position:relative; display:flex;
+    align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(0,0,0,0.8);
+  }
+  #tela {
+    display:block; width:100%; height:100%; object-fit:contain;
+    cursor:pointer;
+  }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(16,25,48,0.7) 0%, rgba(10,16,32,0.85) 100%);
+    border:1px solid rgba(100,160,255,0.22); border-radius:12px;
+    padding:12px 14px; box-shadow:0 4px 18px rgba(0,0,0,0.5);
+    position:relative;
+  }
+  .card-arcade h3 {
+    font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    color:#7fa6e8; margin-bottom:8px; display:flex; align-items:center;
+    justify-content:space-between;
+  }
+  .card-arcade h3 .badge {
+    font-size:9px; padding:2px 6px; border-radius:4px;
+    background:rgba(80,160,255,0.2); color:#9ec5ff;
+  }
+
+  /* DMD (Dot-Matrix Display) */
+  #dmd-container {
+    background:#0a0500; border:2px solid #5a3200; border-radius:8px;
+    padding:8px; box-shadow:inset 0 0 16px rgba(0,0,0,0.9), 0 0 14px rgba(255,140,0,0.2);
+    display:flex; flex-direction:column; align-items:center;
+  }
+  #dmdCanvas {
+    display:block; width:100%; height:68px; image-rendering:pixelated;
+  }
+  .dmd-legenda {
+    font-size:9px; letter-spacing:0.18em; color:#d97706; margin-top:4px; font-weight:700;
+  }
+
+  /* Escala de Multiplicador */
+  .multi-ladder {
+    display:flex; gap:6px; margin-top:4px;
+  }
+  .multi-step {
+    flex:1; padding:6px 0; text-align:center; font-size:11px; font-weight:800;
+    border-radius:6px; background:rgba(255,255,255,0.06); color:#5a6e94;
+    border:1px solid rgba(255,255,255,0.08); transition:all 0.2s;
+  }
+  .multi-step.ativo {
+    background:rgba(255,60,160,0.25); border-color:#ff3d9a; color:#ffb6dd;
+    box-shadow:0 0 10px rgba(255,60,160,0.5); transform:scale(1.05);
+  }
+
+  /* Bolas Travadas (Locks) */
+  .lock-lamps {
+    display:flex; gap:10px; margin-top:6px;
+  }
+  .lock-lamp {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 4px; border-radius:8px; background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .lock-led {
+    width:14px; height:14px; border-radius:50%; background:#242a38;
+    border:2px solid #141822; transition:all 0.25s;
+  }
+  .lock-lamp.ativo .lock-led {
+    background:#ffd479; box-shadow:0 0 12px #ffc84a; border-color:#fff;
+  }
+  .lock-label { font-size:8px; letter-spacing:0.12em; color:#7d8ea8; }
+
+  /* Indicador de Tilt e Tremer */
+  .tilt-status {
+    display:flex; gap:6px; margin:8px 0;
+  }
+  .tilt-lamp {
+    flex:1; text-align:center; padding:5px 0; font-size:9px; font-weight:800;
+    letter-spacing:0.1em; border-radius:6px; background:rgba(255,255,255,0.06);
+    color:#4a5568; border:1px solid rgba(255,255,255,0.06);
+  }
+  .tilt-lamp.aviso1 { background:rgba(255,200,0,0.2); color:#ffd479; border-color:#ffd479; box-shadow:0 0 8px rgba(255,200,0,0.4); }
+  .tilt-lamp.aviso2 { background:rgba(255,100,0,0.25); color:#ff944d; border-color:#ff944d; box-shadow:0 0 8px rgba(255,100,0,0.5); }
+  .tilt-lamp.perigo { background:rgba(255,0,0,0.35); color:#ff5555; border-color:#ff4444; box-shadow:0 0 14px rgba(255,0,0,0.7); animation:pisca 0.4s infinite; }
+  @keyframes pisca { 50% { opacity:0.3; } }
+
+  /* Botões interativos do painel direito */
+  .btn-arcade {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:12px 14px; border-radius:10px; font-weight:800;
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    cursor:pointer; border:1px solid transparent; transition:all 0.15s;
+    user-select:none;
+  }
+  .btn-arcade:active { transform:scale(0.97); }
+
+  .btn-nudge {
+    background:linear-gradient(180deg, #3a2210 0%, #201205 100%);
+    border-color:#d97706; color:#fde68a; box-shadow:0 3px 12px rgba(217,119,6,0.25);
+  }
+  .btn-nudge:hover { background:linear-gradient(180deg, #4f2e14 0%, #2e1a08 100%); }
+
+  .nudge-botoes-grupo {
+    display:flex; gap:6px; margin-top:6px;
+  }
+  .btn-nudge-sub {
+    flex:1; padding:8px 0; text-align:center; font-size:10px; font-weight:700;
+    border-radius:6px; background:rgba(255,255,255,0.06); color:#fde68a;
+    border:1px solid rgba(217,119,6,0.3); cursor:pointer;
+  }
+  .btn-nudge-sub:hover { background:rgba(217,119,6,0.2); }
+
+  .btn-plunger {
+    background:linear-gradient(180deg, #153b6b 0%, #0d2340 100%);
+    border-color:#38bdf8; color:#e0f2fe; box-shadow:0 3px 12px rgba(56,189,248,0.25);
+    margin-top:6px;
+  }
+  .btn-plunger:hover { background:linear-gradient(180deg, #1d4e8c 0%, #122f54 100%); }
+
+  /* Indicador analógico do Plunger */
+  .plunger-track {
+    width:100%; height:12px; border-radius:6px; background:#0b101c;
+    border:1px solid rgba(255,255,255,0.12); overflow:hidden; position:relative; margin-top:8px;
+  }
+  .plunger-fill {
+    height:100%; width:0%; background:linear-gradient(90deg, #38bdf8, #f59e0b, #ef4444);
+    transition:width 0.05s;
+  }
+
+  /* Lista de recordes */
+  .rank-lista { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
+  .rank-item {
+    display:flex; justify-content:space-between; font-size:11px; padding:4px 6px;
+    border-radius:4px; background:rgba(255,255,255,0.03); color:#cbd5e1;
+  }
+  .rank-item .pos { color:#94a3b8; width:18px; }
+  .rank-item .sigla { color:#38bdf8; font-weight:700; }
+  .rank-item .pts { color:#ffd479; font-weight:800; font-variant-numeric:tabular-nums; }
+  .rank-item.destaque { background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); }
+
+  /* Tabela de teclas */
+  .teclas-tabela { display:flex; flex-direction:column; gap:6px; font-size:10px; }
+  .tecla-linha { display:flex; justify-content:space-between; align-items:center; }
+  .tecla-cap {
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    border-radius:4px; padding:2px 6px; font-weight:700; color:#e2e8f0; font-size:9px;
+  }
+  .tecla-desc { color:#94a3b8; }
+
+  /* ------------------- HUD CENTRAL E MENUS ------------------- */
+  #hud-central {
+    position:absolute; top:0; left:0; right:0; pointer-events:none;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:16px 22px; z-index:15;
+    text-shadow:0 2px 10px rgba(0,0,0,0.9);
+  }
+  #mesa-info-box { display:flex; flex-direction:column; }
+  #mesa-nome { font-size:22px; font-weight:900; letter-spacing:0.16em; color:#fff; }
+  #mesa-sub { font-size:10px; letter-spacing:0.2em; color:#93c5fd; margin-top:2px; }
+
+  #status-badges { display:flex; gap:8px; margin-top:8px; }
+  .badge-status {
+    font-size:10px; font-weight:800; letter-spacing:0.14em; padding:3px 8px;
+    border-radius:6px; text-transform:uppercase; transition:all 0.18s;
+    opacity:0.35; filter:grayscale(80%);
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#94a3b8;
+  }
+  .badge-status.ativo-ballsave {
+    opacity:1; filter:none; background:rgba(245,158,11,0.22); border-color:#f59e0b;
+    color:#fef08a; box-shadow:0 0 12px rgba(245,158,11,0.6); animation:pulsoBadge 1s infinite alternate;
+  }
+  .badge-status.ativo-kickback {
+    opacity:1; filter:none; background:rgba(16,185,129,0.22); border-color:#10b981;
+    color:#a7f3d0; box-shadow:0 0 12px rgba(16,185,129,0.6);
+  }
+  @keyframes pulsoBadge {
+    0% { opacity:0.8; transform:scale(0.98); }
+    100% { opacity:1; transform:scale(1.02); }
+  }
+
+  .placar-box { display:flex; gap:18px; align-items:baseline; }
+  .placar-col { text-align:right; }
+  .placar-rot { font-size:9px; letter-spacing:0.2em; color:#94a3b8; display:block; }
+  .placar-val { font-size:22px; font-weight:900; color:#ffd479; font-variant-numeric:tabular-nums; }
+  #bolasV { color:#6ee7b7; }
+  #multV { color:#f472b6; }
+
+  #mensagem-toast {
+    position:absolute; left:50%; top:22%; transform:translateX(-50%);
+    font-size:32px; font-weight:900; letter-spacing:0.12em; color:#fff;
+    text-shadow:0 0 30px rgba(56,189,248,0.9), 0 3px 18px rgba(0,0,0,0.9);
+    opacity:0; transition:opacity 0.15s; pointer-events:none; white-space:nowrap;
+    z-index:20;
+  }
+  #mensagem-toast.on { opacity:1; }
+
+  /* Overlay de seleção de mesa e fim de jogo */
+  .overlay {
+    position:absolute; inset:0; z-index:40;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; background:radial-gradient(circle at 50% 45%, rgba(10,18,36,0.85), rgba(4,6,12,0.96));
+    backdrop-filter:blur(6px);
+  }
+  .overlay.oculto { display:none; }
+  h1 { font-size:42px; font-weight:900; letter-spacing:0.2em; color:#fff; text-shadow:0 0 30px rgba(56,189,248,0.8); text-align:center; }
+  h1 small { display:block; font-size:12px; letter-spacing:0.4em; color:#7fa6e0; margin-top:8px; font-weight:400; }
+  #listaMesas { display:flex; flex-direction:column; gap:8px; width:min(90%, 520px); }
+  .mesaOp {
+    display:flex; align-items:center; gap:14px; padding:10px 16px;
+    border:1px solid rgba(120,160,230,0.28); border-radius:10px;
+    background:rgba(12,18,34,0.7); cursor:pointer; transition:all 0.12s;
+  }
+  .mesaOp:hover { border-color:#38bdf8; background:rgba(20,36,68,0.85); transform:translateX(4px); }
+  .mesaOp.sel { border-color:#ffd479; background:rgba(42,32,10,0.85); transform:translateX(6px); }
+  .mesaOp .num { font-size:14px; font-weight:800; color:#64748b; min-width:20px; }
+  .mesaOp .nome { font-size:16px; font-weight:800; letter-spacing:0.12em; color:#f8fafc; }
+  .mesaOp .sub { font-size:10px; color:#94a3b8; letter-spacing:0.1em; }
+
+  #botaoJogar, #botaoJogar2 {
+    padding:12px 42px; border:2px solid #38bdf8; border-radius:12px;
+    background:rgba(14,116,144,0.3); color:#fff; font-size:16px; font-weight:900;
+    letter-spacing:0.2em; cursor:pointer; transition:all 0.15s;
+  }
+  #botaoJogar:hover, #botaoJogar2:hover { background:rgba(14,165,233,0.5); transform:scale(1.04); }
+
+  #voltar {
+    display:inline-flex; align-items:center; gap:6px;
+    color:#94a3b8; text-decoration:none; font-size:11px; font-weight:800;
+    letter-spacing:0.12em; transition:all 0.15s; padding:4px 0;
+  }
+  #voltar:hover { color:#38bdf8; transform:translateX(-2px); }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+  <!-- ==================== PAINEL ESQUERDO: DMD & MISSÕES ==================== -->
+  <aside id="painel-esq" class="painel-lateral">
+    <a id="voltar" href="index.html">&larr; VOLTAR AOS JOGOS</a>
+
+    <!-- Retro Dot-Matrix Display -->
+    <div id="dmd-container">
+      <canvas id="dmdCanvas" width="128" height="32"></canvas>
+      <div class="dmd-legenda">DOT-MATRIX DISPLAY</div>
+    </div>
+
+    <!-- Card de Missão da Mesa -->
+    <div class="card-arcade">
+      <h3>OBJETIVO DA MESA <span class="badge" id="badgeMesa">MESA 1</span></h3>
+      <div id="missaoTexto" style="font-size:12px;line-height:1.5;color:#e2e8f0;font-weight:600;">—</div>
+      <div style="margin-top:10px;font-size:9px;letter-spacing:0.14em;color:#94a3b8;">PROGRESSO MULTIBALL</div>
+      <div class="lock-lamps">
+        <div class="lock-lamp" id="lockLamp1"><div class="lock-led"></div><span class="lock-label">TRAVA 1</span></div>
+        <div class="lock-lamp" id="lockLamp2"><div class="lock-led"></div><span class="lock-label">TRAVA 2</span></div>
+        <div class="lock-lamp" id="lockLamp3"><div class="lock-led"></div><span class="lock-label">MULTIBALL</span></div>
+      </div>
+    </div>
+
+    <!-- Card de Multiplicador de Bônus -->
+    <div class="card-arcade">
+      <h3>MULTIPLICADOR DE PONTOS</h3>
+      <div class="multi-ladder">
+        <div class="multi-step ativo" id="step1">1X</div>
+        <div class="multi-step" id="step2">2X</div>
+        <div class="multi-step" id="step3">3X</div>
+        <div class="multi-step" id="step5">5X</div>
+        <div class="multi-step" id="step9">9X</div>
+      </div>
+    </div>
+
+    <!-- Telemetria ao Vivo -->
+    <div class="card-arcade">
+      <h3>TELEMETRIA AO VIVO</h3>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#94a3b8;">Bolas Ativas:</span>
+          <span id="telBolasAtivas" style="color:#6ee7b7;font-weight:800;">1</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#94a3b8;">Proteção Bola Salva:</span>
+          <span id="telBolaSalva" style="color:#38bdf8;font-weight:800;">ATIVA (12s)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#94a3b8;">Kickback Outlane:</span>
+          <span id="telKickback" style="color:#10b981;font-weight:800;">ARMADO</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#94a3b8;">Sensibilidade Tilt:</span>
+          <span style="color:#f59e0b;font-weight:800;">3 AVISOS</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== CENTRO: MESA 3D WEBGL ==================== -->
+  <main id="mesa-container">
+    <canvas id="tela"></canvas>
+
+    <!-- HUD Sobreposto Minimalista -->
+    <div id="hud-central">
+      <div id="mesa-info-box">
+        <a id="voltar-compacto" href="index.html">&larr; JOGOS</a>
+        <span id="mesa-nome">ESPAÇO</span>
+        <span id="mesa-sub">ÓRBITA PERDIDA</span>
+        <div id="status-badges">
+          <span class="badge-status" id="badgeBallSave">BOLA SALVA</span>
+          <span class="badge-status" id="badgeKickback">KICKBACK ARMADO</span>
+        </div>
+      </div>
+      <div class="placar-box">
+        <div class="placar-col">
+          <span class="placar-rot">PONTUAÇÃO</span>
+          <span class="placar-val" id="pontosV">0</span>
+        </div>
+        <div class="placar-col">
+          <span class="placar-rot">RECORDE</span>
+          <span class="placar-val" id="recordeV" style="color:#94a3b8;">0</span>
+        </div>
+        <div class="placar-col">
+          <span class="placar-rot">BOLAS</span>
+          <span class="placar-val" id="bolasV">3</span>
+        </div>
+        <div class="placar-col">
+          <span class="placar-rot">BÔNUS</span>
+          <span class="placar-val" id="multV">x1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensagem Flutuante Estilo Arcade -->
+    <div id="mensagem-toast"></div>
+
+    <!-- Menu Inicial de Mesas -->
+    <div id="menuMesa" class="overlay">
+      <h1>PINBALL 3D<small>5 MESAS RETRO · WEBGL2</small></h1>
+      <div id="listaMesas"></div>
+      <button id="botaoJogar">JOGAR PARTIDA</button>
+      <div style="font-size:12px;color:#94a3b8;text-align:center;line-height:1.8;">
+        Use <b>&larr; &rarr;</b> ou <b>A / D</b> para os flippers &middot; <b>ESPAÇO</b> lança a bola<br>
+        <b>Z / X</b> para tremer a mesa (nudge) &middot; <b>1 a 5</b> para alternar mesas
+      </div>
+    </div>
+
+    <!-- Overlay de Fim de Jogo -->
+    <div id="fimJogo" class="overlay oculto">
+      <h1 id="fimTitulo">FIM DE JOGO<small id="fimSub"></small></h1>
+      <button id="botaoJogar2">JOGAR NOVAMENTE</button>
+      <div style="font-size:12px;color:#94a3b8;">Pressione ENTER ou ESPAÇO para jogar de novo</div>
+    </div>
+  </main>
+
+  <!-- ==================== PAINEL DIREITO: RECORDES & CONTROLES ==================== -->
+  <aside id="painel-dir" class="painel-lateral">
+    <!-- Hall da Fama / Recordes -->
+    <div class="card-arcade">
+      <h3>HALL DA FAMA <span class="badge">TOP SCORES</span></h3>
+      <div class="rank-lista">
+        <div class="rank-item destaque"><span class="pos">1.</span><span class="sigla">LAY</span><span class="pts" id="topScore1">150.000</span></div>
+        <div class="rank-item"><span class="pos">2.</span><span class="sigla">RET</span><span class="pts" id="topScore2">98.400</span></div>
+        <div class="rank-item"><span class="pos">3.</span><span class="sigla">PIN</span><span class="pts" id="topScore3">74.200</span></div>
+        <div class="rank-item"><span class="pos">4.</span><span class="sigla">ARC</span><span class="pts" id="topScore4">52.100</span></div>
+        <div class="rank-item"><span class="pos">5.</span><span class="sigla">YOU</span><span class="pts" id="topScore5">0</span></div>
+      </div>
+    </div>
+
+    <!-- Controle do Lançador (Plunger) -->
+    <div class="card-arcade">
+      <h3>LANÇADOR DE BOLA <span class="badge" id="badgeLancador">PRONTO</span></h3>
+      <div class="plunger-track">
+        <div class="plunger-fill" id="plungerFill"></div>
+      </div>
+      <button class="btn-arcade btn-plunger" id="btnLancarClick">
+        🚀 DISPARAR BOLA (ESPAÇO)
+      </button>
+    </div>
+
+    <!-- Mecanismo de Tremer (Nudge / Tilt) -->
+    <div class="card-arcade">
+      <h3>TREMER A MESA <span class="badge">FÍSICA REAL</span></h3>
+      <div class="tilt-status">
+        <div class="tilt-lamp" id="tiltAviso1">AVISO 1</div>
+        <div class="tilt-lamp" id="tiltAviso2">AVISO 2</div>
+        <div class="tilt-lamp" id="tiltPerigo">TILT!</div>
+      </div>
+      <button class="btn-arcade btn-nudge" id="btnTremerClick">
+        📳 SACUDIR MESA (Z / X)
+      </button>
+      <div class="nudge-botoes-grupo">
+        <button class="btn-nudge-sub" id="btnTremerEsq">&larr; ESQ (Z)</button>
+        <button class="btn-nudge-sub" id="btnTremerCima">&uarr; CIMA (X)</button>
+        <button class="btn-nudge-sub" id="btnTremerDir">DIR &rarr; (C)</button>
+      </div>
+    </div>
+
+    <!-- Guia de Teclas Rápidas -->
+    <div class="card-arcade">
+      <h3>CONTROLES DO TECLADO</h3>
+      <div class="teclas-tabela">
+        <div class="tecla-linha"><span class="tecla-cap">◄ &nbsp; ► &nbsp; ou &nbsp; A / D</span><span class="tecla-desc">Flippers</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">Shift Esq / Shift Dir</span><span class="tecla-desc">Flippers Arcade</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">ESPAÇO / ENTER</span><span class="tecla-desc">Lançar Bola</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">Z &nbsp; / &nbsp; X &nbsp; / &nbsp; C</span><span class="tecla-desc">Tremer Mesa</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">1 .. 5 &nbsp; ou &nbsp; N</span><span class="tecla-desc">Trocar Mesa</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">M</span><span class="tecla-desc">Mudo / Som</span></div>
+        <div class="tecla-linha"><span class="tecla-cap">P / ESC</span><span class="tecla-desc">Pausa</span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="roteador.js"></script>
+<script src="pinball.js"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  var dmdCanvas = document.getElementById('dmdCanvas');
+  var dmdCtx = dmdCanvas ? dmdCanvas.getContext('2d') : null;
+
+  var el = {
+    mesaNome: document.getElementById('mesa-nome'),
+    mesaSub: document.getElementById('mesa-sub'),
+    pontos: document.getElementById('pontosV'),
+    recorde: document.getElementById('recordeV'),
+    bolas: document.getElementById('bolasV'),
+    mult: document.getElementById('multV'),
+    badgeMesa: document.getElementById('badgeMesa'),
+    missaoTexto: document.getElementById('missaoTexto'),
+    lock1: document.getElementById('lockLamp1'),
+    lock2: document.getElementById('lockLamp2'),
+    lock3: document.getElementById('lockLamp3'),
+    step1: document.getElementById('step1'),
+    step2: document.getElementById('step2'),
+    step3: document.getElementById('step3'),
+    step5: document.getElementById('step5'),
+    step9: document.getElementById('step9'),
+    telBolasAtivas: document.getElementById('telBolasAtivas'),
+    telBolaSalva: document.getElementById('telBolaSalva'),
+    telKickback: document.getElementById('telKickback'),
+    badgeBallSave: document.getElementById('badgeBallSave'),
+    badgeKickback: document.getElementById('badgeKickback'),
+    plungerFill: document.getElementById('plungerFill'),
+    badgeLancador: document.getElementById('badgeLancador'),
+    tiltAviso1: document.getElementById('tiltAviso1'),
+    tiltAviso2: document.getElementById('tiltAviso2'),
+    tiltPerigo: document.getElementById('tiltPerigo'),
+    topScore5: document.getElementById('topScore5'),
+    toast: document.getElementById('mensagem-toast'),
+    menu: document.getElementById('menuMesa'),
+    lista: document.getElementById('listaMesas'),
+    fim: document.getElementById('fimJogo'),
+    fimTitulo: document.getElementById('fimTitulo'),
+    fimSub: document.getElementById('fimSub')
+  };
+
+  if (typeof window.criarPinball !== 'function') {
+    document.body.innerHTML = '<p style="color:#fff;padding:24px;font:16px monospace">' +
+      'Faltou o arquivo <b>pinball.js</b> na mesma pasta desta p&aacute;gina.</p>';
+    return;
+  }
+
+  /* -------------------------- MOTOR DMD RETRO -------------------------- */
+  var dmdTexto = 'PINBALL 3D';
+  var dmdSub = 'BEM-VINDO';
+  var dmdTick = 0;
+  function atualizarDMD() {
+    if (!dmdCtx) return;
+    dmdTick++;
+    dmdCtx.fillStyle = '#0a0500';
+    dmdCtx.fillRect(0, 0, 128, 32);
+
+    // Grade de pontos sutis
+    dmdCtx.fillStyle = '#1c1004';
+    for (var x = 2; x < 128; x += 3) {
+      for (var y = 2; y < 32; y += 3) {
+        dmdCtx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    // Texto de matriz LED brilhante
+    dmdCtx.fillStyle = '#ff8800';
+    dmdCtx.shadowColor = '#ff6600';
+    dmdCtx.shadowBlur = 4;
+    dmdCtx.font = 'bold 9px monospace';
+    dmdCtx.textAlign = 'center';
+    dmdCtx.textBaseline = 'middle';
+    dmdCtx.fillText(dmdTexto, 64, 11);
+
+    dmdCtx.fillStyle = '#ffb347';
+    dmdCtx.font = 'bold 8px monospace';
+    dmdCtx.fillText(dmdSub, 64, 23);
+    dmdCtx.shadowBlur = 0;
+
+    // Efeito de varredura CRT
+    dmdCtx.fillStyle = 'rgba(0,0,0,0.2)';
+    for (var l = 0; l < 32; l += 2) dmdCtx.fillRect(0, l, 128, 1);
+
+    requestAnimationFrame(atualizarDMD);
+  }
+  requestAnimationFrame(atualizarDMD);
+
+  /* ---------------------------- MOTOR PINBALL ---------------------------- */
+  var ultimaMensagem = '';
+  var jogando = false;
+  var jogo = window.criarPinball(canvas, {
+    aoAtualizar: function (d) {
+      if (d.mesa) {
+        el.mesaNome.textContent = d.mesa.nome;
+        el.mesaSub.textContent = d.mesa.subtitulo;
+        el.badgeMesa.textContent = 'MESA ' + (d.mesa.indice + 1);
+        el.missaoTexto.textContent = d.mesa.missao;
+      }
+      el.pontos.textContent = d.pontos.toLocaleString('pt-BR');
+      el.recorde.textContent = d.recorde.toLocaleString('pt-BR');
+      el.topScore5.textContent = d.pontos.toLocaleString('pt-BR');
+      el.bolas.textContent = d.bolas;
+      el.mult.textContent = 'x' + d.mult;
+      el.telBolasAtivas.textContent = d.bolasAtivas || (d.estado === 'jogando' ? '1' : '0');
+
+      // Escala de multiplicador
+      [el.step1, el.step2, el.step3, el.step5, el.step9].forEach(function(st) { st.classList.remove('ativo'); });
+      if (d.mult >= 9) el.step9.classList.add('ativo');
+      else if (d.mult >= 5) el.step5.classList.add('ativo');
+      else if (d.mult >= 3) el.step3.classList.add('ativo');
+      else if (d.mult >= 2) el.step2.classList.add('ativo');
+      else el.step1.classList.add('ativo');
+
+      // Locks (bolas travadas)
+      var nLocks = d.bolasTravadas || 0;
+      el.lock1.classList.toggle('ativo', nLocks >= 1);
+      el.lock2.classList.toggle('ativo', nLocks >= 2);
+      el.lock3.classList.toggle('ativo', d.bolasAtivas > 1);
+
+      // Lançador gauge
+      if (d.lancador > 0.01) {
+        el.plungerFill.style.width = Math.round(d.lancador * 100) + '%';
+        el.badgeLancador.textContent = 'CARREGANDO';
+        el.badgeLancador.style.background = 'rgba(245,158,11,0.3)';
+        el.badgeLancador.style.color = '#ffd479';
+      } else {
+        el.plungerFill.style.width = '0%';
+        el.badgeLancador.textContent = d.estado === 'lancando' ? 'PRONTO' : 'EM JOGO';
+        el.badgeLancador.style.background = 'rgba(56,189,248,0.2)';
+        el.badgeLancador.style.color = '#9ec5ff';
+      }
+
+      // Tilt Status
+      var av = d.tiltAvisos || 0;
+      el.tiltAviso1.className = 'tilt-lamp' + (av >= 1 ? ' aviso1' : '');
+      el.tiltAviso2.className = 'tilt-lamp' + (av >= 2 ? ' aviso2' : '');
+      el.tiltPerigo.className = 'tilt-lamp' + (d.tilt ? ' perigo' : '');
+
+      // Kickback & Ball Save
+      var segSalva = Math.max(0, Math.ceil(d.tempoSalva || 0));
+      if (d.ballSave && segSalva > 0) {
+        if (el.telBolaSalva) {
+          el.telBolaSalva.textContent = 'ATIVA (' + segSalva + 's)';
+          el.telBolaSalva.style.color = '#38bdf8';
+        }
+        if (el.badgeBallSave) {
+          el.badgeBallSave.textContent = 'BOLA SALVA ' + segSalva + 's';
+          el.badgeBallSave.className = 'badge-status ativo-ballsave';
+        }
+      } else {
+        if (el.telBolaSalva) {
+          el.telBolaSalva.textContent = 'INATIVA';
+          el.telBolaSalva.style.color = '#64748b';
+        }
+        if (el.badgeBallSave) {
+          el.badgeBallSave.textContent = 'BOLA SALVA';
+          el.badgeBallSave.className = 'badge-status';
+        }
+      }
+
+      if (d.kickback) {
+        if (el.telKickback) {
+          el.telKickback.textContent = 'ARMADO';
+          el.telKickback.style.color = '#10b981';
+        }
+        if (el.badgeKickback) {
+          el.badgeKickback.textContent = 'KICKBACK ARMADO';
+          el.badgeKickback.className = 'badge-status ativo-kickback';
+        }
+      } else {
+        if (el.telKickback) {
+          el.telKickback.textContent = 'ESGOTADO';
+          el.telKickback.style.color = '#64748b';
+        }
+        if (el.badgeKickback) {
+          el.badgeKickback.textContent = 'KICKBACK OFF';
+          el.badgeKickback.className = 'badge-status';
+        }
+      }
+
+      // DMD Updates
+      if (d.tilt) {
+        dmdTexto = '!! TILT !!';
+        dmdSub = 'FLIPPERS OFF';
+      } else if (d.bolasAtivas > 1) {
+        dmdTexto = '★ MULTIBALL ★';
+        dmdSub = (d.bolasAtivas) + ' BOLAS EM JOGO';
+      } else if (d.mensagem) {
+        dmdTexto = d.mensagem.slice(0, 18);
+        dmdSub = 'PONTOS: ' + d.pontos.toLocaleString('pt-BR');
+      } else if (d.estado === 'lancando') {
+        dmdTexto = (d.mesa ? d.mesa.nome : 'PINBALL');
+        dmdSub = 'DISPARE A BOLA';
+      } else {
+        dmdTexto = (d.mesa ? d.mesa.nome : 'PINBALL');
+        dmdSub = 'BOLA ' + (4 - d.bolas) + ' · x' + d.mult;
+      }
+
+      // Floating Toast
+      if (d.mensagem && d.mensagem !== ultimaMensagem) {
+        el.toast.textContent = d.mensagem;
+        el.toast.classList.add('on');
+      } else if (!d.mensagem && ultimaMensagem) {
+        el.toast.classList.remove('on');
+      }
+      ultimaMensagem = d.mensagem;
+
+      // Fim de jogo
+      if (d.estado === 'fim') {
+        el.fim.classList.remove('oculto');
+        el.menu.classList.add('oculto');
+        el.fimSub.textContent = (d.mesa ? d.mesa.nome : '') + ' · ' + d.pontos.toLocaleString('pt-BR') + ' PONTOS';
+      } else {
+        el.fim.classList.add('oculto');
+      }
+    }
+  });
+
+  /* ------------------------- SELEÇÃO DE MESAS ------------------------- */
+  var mesas = jogo.mesas();
+  var selecionada = 0;
+  var itens = [];
+
+  mesas.forEach(function (m, i) {
+    var div = document.createElement('div');
+    div.className = 'mesaOp';
+    div.innerHTML = '<span class="num">0' + (i + 1) + '</span>' +
+      '<div><div class="nome">' + m.nome + '</div>' +
+      '<div class="sub">' + m.subtitulo + ' &middot; ' + m.missao + '</div></div>';
+    div.addEventListener('click', function () { selecionada = i; jogo.escolherMesa(i); marcar(); comecar(); });
+    div.addEventListener('mouseenter', function () { selecionada = i; jogo.escolherMesa(i); marcar(); });
+    el.lista.appendChild(div);
+    itens.push(div);
+  });
+  function marcar() {
+    itens.forEach(function (d, i) { d.classList.toggle('sel', i === selecionada); });
+  }
+  marcar();
+
+  /* ------------------------------- FLUXO ------------------------------- */
+  function comecar() {
+    jogando = true;
+    el.menu.classList.add('oculto');
+    el.fim.classList.add('oculto');
+    jogo.acao('comecar');
+  }
+  document.getElementById('botaoJogar').addEventListener('click', comecar);
+  document.getElementById('botaoJogar2').addEventListener('click', comecar);
+
+  // Plunger interativo via botões
+  var plungerTimer = null;
+  var btnPlunger = document.getElementById('btnLancarClick');
+  btnPlunger.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (!jogando) { comecar(); return; }
+    jogo.entrada.lancador(true);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+    btnPlunger.addEventListener(evt, function () {
+      if (jogando) jogo.entrada.lancador(false);
+    });
+  });
+
+  // Botões de Nudge (Tremer a Mesa)
+  document.getElementById('btnTremerClick').addEventListener('click', function () {
+    jogo.entrada.tremer();
+  });
+  document.getElementById('btnTremerEsq').addEventListener('click', function () {
+    jogo.entrada.tremer('esq');
+  });
+  document.getElementById('btnTremerCima').addEventListener('click', function () {
+    jogo.entrada.tremer('cima');
+  });
+  document.getElementById('btnTremerDir').addEventListener('click', function () {
+    jogo.entrada.tremer('dir');
+  });
+
+  /* ----------------------------- REDIMENSIONAR ------------------------- */
+  var mesaBox = document.getElementById('mesa-container');
+  function ajustar() {
+    var l = mesaBox.clientWidth || 800;
+    var a = mesaBox.clientHeight || 900;
+    jogo.redimensionar(l, a);
+    canvas.style.width = l + 'px';
+    canvas.style.height = a + 'px';
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+
+  /* ------------------------------ TECLADO ------------------------------ */
+  var mapaLados = {
+    ArrowLeft: 'esq', KeyA: 'esq', ShiftLeft: 'esq',
+    ArrowRight: 'dir', KeyD: 'dir', ShiftRight: 'dir'
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.repeat) { e.preventDefault(); return; }
+    var k = e.code || e.key;
+    var tratado = true;
+    if (mapaLados[k]) {
+      jogo.entrada.fliper(mapaLados[k], true);
+    } else if (k === 'Space' || k === 'Enter') {
+      if (jogo.dados().estado === 'lancando') jogo.entrada.lancador(true);
+      else if (jogo.dados().estado === 'fim') comecar();
+      else if (!jogando) comecar();
+    } else if (k === 'KeyZ') {
+      jogo.entrada.tremer('esq');
+    } else if (k === 'KeyX' || k === 'KeyT') {
+      jogo.entrada.tremer('cima');
+    } else if (k === 'KeyC' || k === 'Slash') {
+      jogo.entrada.tremer('dir');
+    } else if (k === 'Digit1') { selecionada = 0; jogo.escolherMesa(0); marcar(); }
+    else if (k === 'Digit2') { selecionada = 1; jogo.escolherMesa(1); marcar(); }
+    else if (k === 'Digit3') { selecionada = 2; jogo.escolherMesa(2); marcar(); }
+    else if (k === 'Digit4') { selecionada = 3; jogo.escolherMesa(3); marcar(); }
+    else if (k === 'Digit5') { selecionada = 4; jogo.escolherMesa(4); marcar(); }
+    else if (k === 'KeyN') {
+      selecionada = (selecionada + 1) % itens.length;
+      jogo.escolherMesa(selecionada); marcar();
+    } else if (k === 'KeyV') {
+      jogo.acao('camera');
+    } else if (k === 'KeyM') {
+      jogo.acao('som');
+    } else if (k === 'KeyP' || k === 'Escape') {
+      jogo.acao('pausa');
+    } else if (k === 'KeyR') {
+      comecar();
+    } else {
+      tratado = false;
+    }
+    if (tratado) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('keyup', function (e) {
+    var k = e.code || e.key;
+    if (mapaLados[k]) jogo.entrada.fliper(mapaLados[k], false);
+    else if (k === 'Space' || k === 'Enter') jogo.entrada.lancador(false);
+  });
+
+  window.addEventListener('blur', function () {
+    jogo.entrada.fliper('esq', false);
+    jogo.entrada.fliper('dir', false);
+    jogo.entrada.lancador(false);
+  });
+
+  // Clique na mesa também dispara o lançador se estiver pronto
+  canvas.addEventListener('pointerdown', function () {
+    if (jogo.dados().estado === 'lancando') jogo.entrada.lancador(true);
+  });
+  canvas.addEventListener('pointerup', function () {
+    if (jogo.dados().estado === 'lancando') jogo.entrada.lancador(false);
+  });
+
+  ajustar();
+  window.addEventListener('load', ajustar);
+  jogo.iniciar();
+  jogo.escolherMesa(selecionada);
+  window.__pinball = jogo;
+})();
+</script>
+</body>
+</html>

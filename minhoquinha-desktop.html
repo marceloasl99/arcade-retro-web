@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MINHOQUINHA — Nokia (computador)</title>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%;
+    background:#000; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+  }
+  body {
+    display:flex; align-items:center; justify-content:center;
+    font-family:monospace;
+  }
+  /* O canvas é desenhado em 480x270 (CGA pixelado) e ampliado por um
+     multiplicador inteiro: em um monitor Full HD o fator é 4, resultando
+     em exatamente 1920x1080, pixel por pixel, sem borrão. */
+  canvas {
+    display:block;
+    image-rendering:pixelated;
+    image-rendering:-moz-crisp-edges;
+    image-rendering:crisp-edges;
+    background:#000;
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:10px;left:14px;z-index:50;color:#55FF55;font:13px monospace;text-decoration:none;opacity:.6">&#8592; JOGOS</a>
+<canvas id="cga" width="480" height="270"></canvas>
+
+<script src="roteador.js"></script>
+<script>
+"use strict";
+
+/* ==========================================================================
+   NOKIA "MINHOQUINHA" (SNAKE) — estilo CGA
+   Framebuffer virtual: 480 x 270 pixels  ->  escala inteira x4 = 1920x1080
+   Paletas reais do CGA modo 4 (4 cores):
+     PAL0 alta  : preto, verde claro, vermelho claro, amarelo
+     PAL0 baixa : preto, verde, vermelho, marrom
+     PAL1 alta  : preto, ciano, magenta, branco
+   ========================================================================== */
+
+var W = 480, H = 270;          // resolução interna (1/4 do Full HD)
+var CELL = 15;                 // tamanho da célula em pixels CGA
+var COLS = 32, ROWS = 18;      // 32*15 = 480 | 18*15 = 270
+
+// área jogável (borda de 1 célula em volta)
+var X0 = 1, X1 = COLS - 2;     // 1 .. 30
+var Y0 = 1, Y1 = ROWS - 2;     // 1 .. 16
+
+var SPEED_START = 135;         // ms por passo
+var SPEED_MIN   = 60;
+var SPEED_STEP  = 4;           // acelera a cada comida
+
+var canvas = document.getElementById('cga');
+var ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+/* ---------------------------- paletas CGA ------------------------------- */
+var PALETTES = [
+  { name:'CGA PAL0 HI', bg:'#000000', bright:'#55FF55', dim:'#00AA00',
+    food:'#FF5555', alt:'#FFFF55' },
+  { name:'CGA PAL0 LO', bg:'#000000', bright:'#00AA00', dim:'#005500',
+    food:'#AA0000', alt:'#AA5500' },
+  { name:'CGA PAL1 HI', bg:'#000000', bright:'#55FFFF', dim:'#00AAAA',
+    food:'#FF55FF', alt:'#FFFFFF' }
+];
+var palIndex = 0;
+function P() { return PALETTES[palIndex]; }
+
+/* ------------------------- fonte pixel 3x5 ------------------------------ */
+var FONT = {
+  'A':['111','101','111','101','101'], 'B':['110','101','110','101','110'],
+  'C':['111','100','100','100','111'], 'D':['110','101','101','101','110'],
+  'E':['111','100','110','100','111'], 'F':['111','100','110','100','100'],
+  'G':['111','100','101','101','111'], 'H':['101','101','111','101','101'],
+  'I':['111','010','010','010','111'], 'J':['001','001','001','101','111'],
+  'K':['101','101','110','101','101'], 'L':['100','100','100','100','111'],
+  'M':['101','111','111','101','101'], 'N':['101','111','111','111','101'],
+  'O':['111','101','101','101','111'], 'P':['111','101','111','100','100'],
+  'Q':['111','101','101','111','001'], 'R':['111','101','111','110','101'],
+  'S':['111','100','111','001','111'], 'T':['111','010','010','010','010'],
+  'U':['101','101','101','101','111'], 'V':['101','101','101','101','010'],
+  'W':['101','101','111','111','101'], 'X':['101','101','010','101','101'],
+  'Y':['101','101','010','010','010'], 'Z':['111','001','010','100','111'],
+  '0':['111','101','101','101','111'], '1':['010','110','010','010','111'],
+  '2':['111','001','111','100','111'], '3':['111','001','111','001','111'],
+  '4':['101','101','111','001','001'], '5':['111','100','111','001','111'],
+  '6':['111','100','111','101','111'], '7':['111','001','001','001','001'],
+  '8':['111','101','111','101','111'], '9':['111','101','111','001','111'],
+  '-':['000','000','111','000','000'], '.':['000','000','000','000','010'],
+  '/':['001','001','010','100','100'], ':':['000','010','000','010','000'],
+  '!':['010','010','010','000','010'], ' ':['000','000','000','000','000']
+};
+
+function textWidth(str, s) {
+  s = s || 1;
+  return str.length * 4 * s - s;
+}
+
+function drawText(str, x, y, color, s) {
+  s = s || 1;
+  ctx.fillStyle = color;
+  var cx = x;
+  str = String(str).toUpperCase();
+  for (var i = 0; i < str.length; i++) {
+    var ch = str.charAt(i);
+    if (ch === '\n') { cx = x; y += 6 * s; continue; }
+    var g = FONT[ch] || FONT[' '];
+    for (var r = 0; r < 5; r++) {
+      var row = g[r];
+      for (var c = 0; c < 3; c++) {
+        if (row.charAt(c) === '1') ctx.fillRect(cx + c * s, y + r * s, s, s);
+      }
+    }
+    cx += 4 * s;
+  }
+}
+
+function drawTextCentered(str, cy, color, s) {
+  s = s || 1;
+  var lines = String(str).toUpperCase().split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var w = textWidth(lines[i], s);
+    drawText(lines[i], Math.round((W - w) / 2), cy + i * 6 * s, color, s);
+  }
+}
+
+function pad(num, len) {
+  var t = String(num);
+  while (t.length < len) t = '0' + t;
+  return t;
+}
+
+/* ------------------------------- estado --------------------------------- */
+var STATE_READY = 0, STATE_PLAY = 1, STATE_PAUSE = 2, STATE_OVER = 3, STATE_WIN = 4;
+
+var state = STATE_READY;
+var snake = [];
+var dir = { x: 1, y: 0 };
+var queue = [];
+var food = { x: 0, y: 0 };
+var score = 0;
+var hi = 0;
+var stepMs = SPEED_START;
+var acc = 0;
+var last = 0;
+var blink = 0;
+var muted = false;
+
+try { hi = parseInt(localStorage.getItem('minhoquinha.hi') || '0', 10) || 0; } catch (e) { hi = 0; }
+
+/* ------------------------------- áudio ---------------------------------- */
+var actx = null;
+function audioInit() {
+  if (actx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) actx = new AC();
+  } catch (e) { actx = null; }
+}
+function beep(freq, dur, type, vol) {
+  if (muted) return;
+  audioInit();
+  if (!actx) return;
+  try {
+    if (actx.state === 'suspended') actx.resume();
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.value = freq;
+    g.gain.value = vol === undefined ? 0.06 : vol;
+    o.connect(g); g.connect(actx.destination);
+    var t = actx.currentTime;
+    o.start(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.stop(t + dur + 0.02);
+  } catch (e) { /* ignora */ }
+}
+
+/* ------------------------------ helpers --------------------------------- */
+function isFree(x, y) {
+  if (x === food.x && y === food.y) return false;
+  for (var i = 0; i < snake.length; i++) {
+    if (snake[i].x === x && snake[i].y === y) return false;
+  }
+  return true;
+}
+
+function placeFood() {
+  var free = [];
+  for (var y = Y0; y <= Y1; y++) {
+    for (var x = X0; x <= X1; x++) {
+      if (isFree(x, y)) free.push({ x: x, y: y });
+    }
+  }
+  if (free.length === 0) {
+    state = STATE_WIN;
+    if (score > hi) {
+      hi = score;
+      try { localStorage.setItem('minhoquinha.hi', String(hi)); } catch (e) {}
+    }
+    winSound();
+    return;
+  }
+  food = free[(Math.random() * free.length) | 0];
+}
+
+function winSound() {
+  beep(660, 0.10, 'square', 0.07);
+  setTimeout(function () { beep(880, 0.10, 'square', 0.07); }, 110);
+  setTimeout(function () { beep(1320, 0.22, 'square', 0.07); }, 230);
+}
+
+function newGame() {
+  snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+  dir = { x: 1, y: 0 };
+  queue = [];
+  score = 0;
+  stepMs = SPEED_START;
+  acc = 0;
+  state = STATE_PLAY;
+  placeFood();
+  beep(440, 0.06, 'square', 0.05);
+}
+
+function die() {
+  state = STATE_OVER;
+  if (score > hi) {
+    hi = score;
+    try { localStorage.setItem('minhoquinha.hi', String(hi)); } catch (e) {}
+  }
+  beep(220, 0.18, 'square', 0.08);
+  setTimeout(function () { beep(150, 0.30, 'square', 0.08); }, 190);
+}
+
+function togglePause() {
+  if (state === STATE_PLAY) { state = STATE_PAUSE; beep(330, 0.05, 'square', 0.04); }
+  else if (state === STATE_PAUSE) { state = STATE_PLAY; beep(440, 0.05, 'square', 0.04); }
+}
+
+function pushDir(x, y) {
+  var lastDir = queue.length ? queue[queue.length - 1] : dir;
+  if (x === -lastDir.x && y === -lastDir.y) return; // não pode inverter
+  if (x === lastDir.x && y === lastDir.y) return;   // direção repetida
+  if (queue.length < 3) queue.push({ x: x, y: y });
+}
+
+/* ------------------------------- lógica --------------------------------- */
+function tick() {
+  if (state !== STATE_PLAY) return;
+
+  // aplica no máximo uma mudança de direção por passo
+  while (queue.length) {
+    var d = queue.shift();
+    if (d.x === -dir.x && d.y === -dir.y) continue;
+    if (d.x === dir.x && d.y === dir.y) continue;
+    dir = d;
+    break;
+  }
+
+  var hx = snake[0].x + dir.x;
+  var hy = snake[0].y + dir.y;
+
+  // parede
+  if (hx < X0 || hx > X1 || hy < Y0 || hy > Y1) { die(); return; }
+
+  var grow = (hx === food.x && hy === food.y);
+
+  // corpo (a cauda sai do lugar, a menos que esteja crescendo)
+  var limit = snake.length - (grow ? 0 : 1);
+  for (var i = 0; i < limit; i++) {
+    if (snake[i].x === hx && snake[i].y === hy) { die(); return; }
+  }
+
+  snake.unshift({ x: hx, y: hy });
+  if (grow) {
+    score += 1;
+    beep(880 + score * 8, 0.06, 'square', 0.06);
+    if (stepMs > SPEED_MIN) stepMs = Math.max(SPEED_MIN, stepMs - SPEED_STEP);
+    placeFood();
+  } else {
+    snake.pop();
+  }
+}
+
+/* ------------------------------ desenho --------------------------------- */
+function drawFrame() {
+  var p = P();
+  ctx.fillStyle = p.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // moldura de 1 pixel CGA em volta da área jogável (= 4 px reais no Full HD)
+  var left = X0 * CELL - 1, top = Y0 * CELL - 1;
+  var w = (X1 - X0 + 1) * CELL + 2, h = (Y1 - Y0 + 1) * CELL + 2;
+  ctx.fillStyle = p.dim;
+  ctx.fillRect(left, top, w, 1);
+  ctx.fillRect(left, top + h - 1, w, 1);
+  ctx.fillRect(left, top, 1, h);
+  ctx.fillRect(left + w - 1, top, 1, h);
+}
+
+function drawFood() {
+  if (state === STATE_WIN) return;
+  var p = P();
+  // pisca suavemente para ficar visível no monitor
+  var on = (Math.floor(blink / 250) % 2) === 0;
+  ctx.fillStyle = on ? p.food : p.alt;
+  ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
+  ctx.fillStyle = p.bg;
+  ctx.fillRect(food.x * CELL + 5, food.y * CELL + 5, CELL - 10, CELL - 10);
+  ctx.fillStyle = on ? p.food : p.alt;
+  ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, 3, 3);
+  ctx.fillRect(food.x * CELL + CELL - 6, food.y * CELL + CELL - 6, 3, 3);
+}
+
+function drawSnake() {
+  var p = P();
+  for (var i = snake.length - 1; i >= 0; i--) {
+    var s = snake[i];
+    var x = s.x * CELL, y = s.y * CELL;
+    if (i === 0) {
+      ctx.fillStyle = p.bright;
+      ctx.fillRect(x, y, CELL, CELL);
+      // olhos (sempre na direção do movimento)
+      ctx.fillStyle = p.bg;
+      var e1x, e1y, e2x, e2y;
+      if (dir.x === 1) {          // olhando para a direita
+        e1x = x + CELL - 5; e1y = y + 3;
+        e2x = x + CELL - 5; e2y = y + CELL - 6;
+      } else if (dir.x === -1) {  // olhando para a esquerda
+        e1x = x + 2; e1y = y + 3;
+        e2x = x + 2; e2y = y + CELL - 6;
+      } else if (dir.y === -1) {  // olhando para cima
+        e1x = x + 3;        e1y = y + 2;
+        e2x = x + CELL - 6; e2y = y + 2;
+      } else {                    // olhando para baixo
+        e1x = x + 3;        e1y = y + CELL - 5;
+        e2x = x + CELL - 6; e2y = y + CELL - 5;
+      }
+      ctx.fillRect(e1x, e1y, 3, 3);
+      ctx.fillRect(e2x, e2y, 3, 3);
+    } else {
+      // corpo com "escama" interna para dar textura
+      ctx.fillStyle = p.dim;
+      ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = p.bright;
+      ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
+    }
+  }
+}
+
+function drawHud() {
+  var p = P();
+  // faixa superior (fora da área jogável): placar
+  drawText('SCORE ' + pad(score, 3), 4, 5, p.bright, 1);
+  drawText('HI ' + pad(hi, 3), W - textWidth('HI ' + pad(hi, 3), 1) - 4, 5, p.dim, 1);
+  // faixa inferior
+  drawText(P().name, 4, H - 10, p.dim, 1);
+  var right = 'F FULLSCREEN  M SOM  ' + String(palIndex + 1) + '/3';
+  drawText(right, W - textWidth(right, 1) - 4, H - 10, p.dim, 1);
+}
+
+function drawOverlay() {
+  var p = P();
+  var top = Y0 * CELL, height = (Y1 - Y0 + 1) * CELL;
+
+  if (state === STATE_READY) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
+    drawTextCentered('NOKIA\nMINHOQUINHA', top + 30, p.bright, 2);
+    drawTextCentered('CGA 480X270 - FULL HD 1920X1080', top + 70, p.dim, 1);
+    drawTextCentered('SETAS OU WASD PARA JOGAR', top + 92, p.alt, 1);
+    drawTextCentered('P PAUSA   F TELA CHEIA   M SOM', top + 104, p.dim, 1);
+    drawTextCentered('1 2 3 TROCAM A PALETA CGA', top + 116, p.dim, 1);
+  } else if (state === STATE_PAUSE) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
+    drawTextCentered('PAUSA', top + 50, p.bright, 3);
+    drawTextCentered('PRESSIONE P PARA CONTINUAR', top + 96, p.alt, 1);
+  } else if (state === STATE_OVER) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
+    drawTextCentered('GAME OVER', top + 40, p.food, 3);
+    drawTextCentered('PONTOS ' + pad(score, 3), top + 82, p.bright, 1);
+    drawTextCentered('RECORDE ' + pad(hi, 3), top + 94, p.dim, 1);
+    drawTextCentered('ESPACO OU ENTER PARA JOGAR DE NOVO', top + 112, p.alt, 1);
+  } else if (state === STATE_WIN) {
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(X0 * CELL, top, (X1 - X0 + 1) * CELL, height);
+    drawTextCentered('VOCE VENCEU', top + 40, p.bright, 3);
+    drawTextCentered('A TELA TODA E SUA', top + 82, p.alt, 1);
+    drawTextCentered('ESPACO PARA JOGAR DE NOVO', top + 100, p.dim, 1);
+  }
+}
+
+function render() {
+  drawFrame();
+  if (state === STATE_PLAY || state === STATE_PAUSE) {
+    drawFood();
+    drawSnake();
+  }
+  drawHud();
+  drawOverlay();
+}
+
+/* ------------------------------- loop ----------------------------------- */
+function frame(now) {
+  if (!last) last = now;
+  var dt = now - last;
+  last = now;
+  if (dt > 250) dt = 250;         // volta de aba inativa: não acumula demais
+  blink += dt;
+
+  if (state === STATE_PLAY) {
+    acc += dt;
+    var guard = 0;
+    while (acc >= stepMs && guard < 8) {
+      acc -= stepMs;
+      guard++;
+      tick();
+      if (state !== STATE_PLAY) { acc = 0; break; }
+    }
+  } else {
+    acc = 0;
+  }
+
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------ controles ------------------------------- */
+function startOrRestart() {
+  if (state === STATE_READY || state === STATE_OVER || state === STATE_WIN) newGame();
+  else if (state === STATE_PAUSE) togglePause();
+}
+
+function keyName(e) {
+  if (e.key) return e.key;
+  return '';
+}
+
+document.addEventListener('keydown', function (e) {
+  var k = keyName(e);
+  var lo = k.toLowerCase();
+  var code = e.code || '';
+
+  // reinicia se estiver parado, e só depois aplica a direção
+  function startIfIdle() {
+    if (state === STATE_READY || state === STATE_OVER || state === STATE_WIN) newGame();
+  }
+  function fs() {
+    try {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        var pr = document.documentElement.requestFullscreen();
+        if (pr && pr.catch) pr.catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  var handled = true;
+  switch (lo) {
+    case 'arrowleft': case 'a': startIfIdle(); pushDir(-1, 0); break;
+    case 'arrowright': case 'd': startIfIdle(); pushDir(1, 0); break;
+    case 'arrowup': case 'w': startIfIdle(); pushDir(0, -1); break;
+    case 'arrowdown': case 's': startIfIdle(); pushDir(0, 1); break;
+    case ' ': case 'spacebar': startOrRestart(); break;
+    case 'enter': startOrRestart(); break;
+    case 'p': case 'escape': togglePause(); break;
+    case 'f': fs(); break;
+    case 'm':
+      muted = !muted;
+      if (!muted) beep(660, 0.05, 'square', 0.05);
+      break;
+    case '1': palIndex = 0; break;
+    case '2': palIndex = 1; break;
+    case '3': palIndex = 2; break;
+    default:
+      if (code === 'Space') { startOrRestart(); }
+      else handled = false;
+  }
+
+  if (handled) {
+    e.preventDefault();
+    audioInit();
+  }
+}, { passive: false });
+
+// toque / arrastar (celular e tablet)
+var tsx = 0, tsy = 0, touching = false, swiped = false, lastTouch = 0;
+
+canvas.addEventListener('touchstart', function (e) {
+  audioInit();
+  touching = true;
+  swiped = false;
+  tsx = e.touches[0].clientX;
+  tsy = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', function (e) {
+  if (!touching) return;
+  var dx = e.touches[0].clientX - tsx;
+  var dy = e.touches[0].clientY - tsy;
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { e.preventDefault(); return; }
+  swiped = true;
+  if (Math.abs(dx) > Math.abs(dy)) pushDir(dx > 0 ? 1 : -1, 0);
+  else pushDir(0, dy > 0 ? 1 : -1);
+  tsx = e.touches[0].clientX;
+  tsy = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchend', function (e) {
+  touching = false;
+  lastTouch = Date.now();
+  // toque simples (sem arrastar) inicia ou reinicia o jogo
+  if (!swiped && (state === STATE_READY || state === STATE_OVER || state === STATE_WIN)) {
+    newGame();
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('click', function () {
+  if (Date.now() - lastTouch < 700) return;   // evita disparo duplo no toque
+  audioInit();
+  if (state === STATE_READY || state === STATE_OVER || state === STATE_WIN) newGame();
+  else togglePause();
+});
+
+/* ---------------- escala: 4x = 1920x1080 exatos em Full HD -------------- */
+function resize() {
+  var vw = window.innerWidth || 1920;
+  var vh = window.innerHeight || 1080;
+  var s = Math.min(vw / W, vh / H);
+  var si = Math.floor(s);
+  // usa múltiplo inteiro (pixel perfeito) quando a sobra é pequena;
+  // assim em Full HD dá exatamente 4x = 1920x1080, e em telas
+  // fora do padrão o jogo ocupa a tela inteira.
+  if (si >= 1 && (s - si) < 0.25) s = si;
+  canvas.style.width = Math.round(W * s) + 'px';
+  canvas.style.height = Math.round(H * s) + 'px';
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+
+/* imagem de abertura (estado READY) */
+snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+food = { x: 20, y: 8 };
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
