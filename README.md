@@ -320,22 +320,6 @@ python -m http.server 8080
 # Using Node.js (npx)
 npx serve .
 ```
-
----
-
-## ☁️ Deploying to GitHub Pages
-
-You can host this entire collection online for free using GitHub Pages:
-
-1. Push this repository to GitHub.
-2. Go to your repository on GitHub and open **Settings** > **Pages**.
-3. Under **Branch**, select `main` and root directory `/(root)`.
-4. Click **Save**.
-5. Your arcade collection will be live at:
-   `https://<your-username>.github.io/arcade-retro-web/`
-
----
-
 ## 📜 License
 
 This project is open-source and licensed under the [MIT License](LICENSE).
