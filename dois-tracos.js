@@ -375,17 +375,17 @@
       ctx.textAlign = 'center';
       ctx.font = '11px ui-monospace, "Cascadia Mono", monospace';
       ctx.fillStyle = CORES.verde;
-      ctx.fillText(cpu ? (isPt ? 'VOCÊ' : 'YOU') : (isPt ? 'JOGADOR 1' : 'PLAYER 1'), 120, 22);
+      ctx.fillText(cpu ? (isPt ? 'VOCÊ' : 'YOU') : (isPt ? 'JOGADOR 1' : 'PLAYER 1'), LARGURA * 0.25, 22);
       ctx.fillStyle = CORES.ciano;
-      ctx.fillText(cpu ? 'CPU' : (isPt ? 'JOGADOR 2' : 'PLAYER 2'), 360, 22);
+      ctx.fillText(cpu ? 'CPU' : (isPt ? 'JOGADOR 2' : 'PLAYER 2'), LARGURA * 0.75, 22);
       ctx.fillStyle = CORES.cinza;
       ctx.fillText((isPt ? 'RALI ' : 'RALLY ') + rali + '  ·  ' + (isPt ? 'MELHOR ' : 'BEST ') + recordeRali, LARGURA / 2, 22);
 
       ctx.font = 'bold 30px ui-monospace, "Cascadia Mono", monospace';
       ctx.fillStyle = CORES.verde;
-      ctx.fillText(String(placar[0]), 120, 52);
+      ctx.fillText(String(placar[0]), LARGURA * 0.25, 52);
       ctx.fillStyle = CORES.ciano;
-      ctx.fillText(String(placar[1]), 360, 52);
+      ctx.fillText(String(placar[1]), LARGURA * 0.75, 52);
       ctx.textAlign = 'left';
 
       // Traços
