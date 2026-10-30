@@ -1,6 +1,6 @@
-# 🕹️ Retro Arcade Web Collection v2.2
+# 🕹️ Retro Arcade Web Collection v3.0
 
-[![Version](https://img.shields.io/badge/version-2.2.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
+[![Version](https://img.shields.io/badge/version-3.0.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Games](https://img.shields.io/badge/games-12%20classic%20titles-orange.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Tech](https://img.shields.io/badge/tech-HTML5%20%7C%20Canvas%20%7C%20WebAudio%20%7C%20Wasm-blue.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Platform](https://img.shields.io/badge/platform-Desktop%20%26%20Mobile-purple.svg)](https://github.com/marceloasl99/arcade-retro-web)
@@ -8,9 +8,24 @@
 
 An authentic, zero-dependency browser collection of **12 classic retro arcade games** with authentic CRT cabinet aesthetics, custom physics engines, procedural Web Audio API sound synthesis, dual responsive layouts (Desktop CRT Cabinet with sidebar telemetry & Fullscreen Touch Mobile), automatic platform routing, and full bilingual support (English by default with instant Portuguese toggle).
 
-Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920×1080) with zero vertical scroll**.
+Designed to fit **all 12 games simultaneously on a standard Full HD monitor (1920×1080) with zero vertical scroll**.
 
 ![Retro Arcade Full HD Menu (English)](tela-menu-fhd-en.png)
+
+---
+
+## 🌟 What's New in Version 3.0
+
+* **Three New Games**:
+  * **Brick Breaker (Quebra-Tijolos, 1976)**: Breakout-style wall of 6 rows of bricks, 4 wall designs that repeat, 3 balls and speed that rises as bricks fall.
+  * **The Wall (Game Show Pin Board)**: drop the ball through a grid of pins and watch it land in one of 9 prize slots; 10 balls per game.
+  * **Two Paddles (Dois Traços, 1972)**: a Pong-style duel with a paddle on each side. Play 2 players on the same keyboard or against the CPU; first to 7 wins.
+* **Hub with 12 Games**: the menu grid is now 3 columns × 4 rows and still fits a 1080p screen with no scroll. The three new games have their own icons, cards and PLAY buttons.
+* **Arenas Fill the Window**: the playing field of the three new games now uses all the available area of the window (desktop center panel and the full phone screen), instead of a letterboxed 480×640 box.
+* **The Wall Pin Fix**: the pin grid was redesigned so the ball can no longer fall straight down the sides and land in the 1000-point slots.
+* **Two Paddles Score Layout**: the score and labels are centered on the real width of the court.
+* **New Screenshots**: refreshed hub screenshot and desktop/mobile captures for every new game.
+* **Tests**: a self-test suite for each new game (`_selftest_brick_breaker.js`, `_selftest_the_wall.js`, `_selftest_dois_tracos.js`), and the router test accepts the `?v=2.2` cache-busting parameter.
 
 ---
 
@@ -60,14 +75,14 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 
 ---
 
-## 📺 Full HD Zero-Scroll 3×3 Menu
+## 📺 Full HD Zero-Scroll 3×4 Menu
 
-* On standard 1080p desktop monitors (1920×1080) and 1366×768 laptops, the 9 games are laid out in a compact, highly legible **3-column × 3-row grid**.
+* On standard 1080p desktop monitors (1920×1080), the 12 games are laid out in a compact, highly legible **3-column × 4-row grid**.
 * **Zero vertical scrolling required**: All game covers, badges, descriptions, controls, and play buttons are immediately visible on screen upon loading.
 
 ---
 
-## 🎮 The 9 Arcade Games
+## 🎮 The 12 Arcade Games
 
 ### 1. Snake (Minhoquinha)
 * **Classic Grid Snake Action**: Smooth speed scaling, boundary-aware navigation, and food generation.
@@ -270,7 +285,7 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 
 * **Zero External Dependencies**: Pure vanilla HTML5, CSS3, JavaScript, Canvas, Web Audio API, and self-contained WebAssembly.
 * **Bilingual English & Portuguese Engine**: Unified language dictionary and automatic DOM switcher.
-* **Zero-Scroll Full HD Layout**: 3×3 responsive grid fitting 1920×1080 without any page scroll.
+* **Zero-Scroll Full HD Layout**: 3×4 responsive grid fitting 1920×1080 without any page scroll.
 * **Smart Device Routing**: Handled seamlessly by `roteador.js`. Opening any game on a mobile phone automatically serves the mobile touch interface; opening on a PC loads the desktop cabinet view with sidebar telemetry.
 * **Manual Platform Override**: Append `?desktop=1` or `?mobile=1` to any game URL to force a specific interface mode.
 * **PWA & Touch-Ready**: Optimized multi-touch pointer event handling with low latency and zero double-tap zoom delay (`touch-action: manipulation`).
@@ -282,7 +297,7 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 
 ```
 .
-├── index.html                    # Main menu & 9-game 3x3 selector
+├── index.html                    # Main menu & 12-game 3×4 selector
 ├── roteador.js                   # Client-side platform detector & router
 ├── minhoquinha-desktop.html      # Snake (Desktop cabinet)
 ├── minhoquinha-mobile.html       # Snake (Mobile touch)
