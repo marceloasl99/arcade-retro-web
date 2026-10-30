@@ -300,6 +300,15 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 ├── penalty-kick.js               # Penalty Kick 3D game engine
 ├── penalty-kick-desktop.html     # Penalty Kick (Desktop cabinet)
 ├── penalty-kick-mobile.html      # Penalty Kick (Mobile touch)
+├── brick-breaker.js              # Brick Breaker game engine
+├── brick-breaker-desktop.html    # Brick Breaker (Desktop cabinet)
+├── brick-breaker-mobile.html     # Brick Breaker (Mobile touch)
+├── the-wall.js                   # The Wall game engine
+├── the-wall-desktop.html         # The Wall (Desktop cabinet)
+├── the-wall-mobile.html          # The Wall (Mobile touch)
+├── dois-tracos.js                # Two Paddles (Pong) game engine
+├── dois-tracos-desktop.html      # Two Paddles (Desktop cabinet)
+├── dois-tracos-mobile.html       # Two Paddles (Mobile touch)
 ├── sprites/                      # High-resolution game sprite assets
 ├── sounds/                       # Audio effects and soundtrack files
 ├── _selftest_*.js                # Automated unit test suite
