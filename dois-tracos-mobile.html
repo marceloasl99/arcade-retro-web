@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#05070f">
+<title>DOIS TRAÇOS — Celular</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#05070f; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0;
+  }
+
+  #app-mobile {
+    width:100%; max-width:430px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
+    margin:0 auto; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: radial-gradient(circle at 50% 30%, #0c1222 0%, #05070f 100%);
+    overflow:hidden; position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+
+  /* ------------------- CABEÇALHO SUPERIOR ------------------- */
+  #header-mobile {
+    flex:0 0 auto; height:44px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 8px; width:100%;
+    background:rgba(8,12,22,0.94); border-bottom:1px solid rgba(85,255,85,0.2);
+    z-index:20;
+  }
+  #voltar-link {
+    color:#55ff55; text-decoration:none; font-size:10px; font-weight:800;
+    letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
+    flex-shrink:0;
+  }
+  .info-bar { display:flex; gap:8px; font-size:10px; align-items:center; }
+  .info-item { display:flex; flex-direction:column; align-items:center; }
+  .info-rotulo { font-size:7px; color:#64748b; letter-spacing:0.05em; text-transform:uppercase; }
+  .info-val { font-weight:800; color:#f8fafc; font-size:11px; }
+
+  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .btn-topo {
+    background:#1e293b; border:1px solid #475569; border-radius:6px;
+    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:30px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-topo:active { background:#55ff55; color:#0f172a; }
+
+  /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
+  #palco {
+    flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden;
+  }
+  #tela {
+    position:absolute; left:0; top:0;
+    display:block;
+    box-shadow: 0 0 24px rgba(0,0,0,0.85), 0 0 0 1px rgba(85,255,85,0.25);
+    border-radius:6px;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* ------------------- PAINEL DE CONTROLES DE TOQUE ------------------- */
+  #controles-deck {
+    flex:0 0 auto; padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:rgba(8,12,22,0.96); border-top:1px solid rgba(85,255,85,0.2);
+    z-index:20;
+  }
+
+  .grupo-direcional {
+    display:flex; gap:8px; flex:1 1 50%;
+  }
+  .grupo-direcional.desativado { opacity:0.35; pointer-events:none; }
+
+  .btn-toque {
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:12px; font-family:inherit; font-weight:800;
+    cursor:pointer; outline:none; transition:transform 0.05s, background-color 0.05s;
+    border:2px solid rgba(85,255,85,0.35);
+    background:linear-gradient(180deg, #1e293b, #0f172a);
+    color:#55ff55;
+    box-shadow:0 4px 0 #05070f, inset 0 1px 0 rgba(255,255,255,0.1);
+    flex:1; height:clamp(48px, 8.5vh, 64px); font-size:clamp(20px, 4vh, 26px);
+  }
+  .btn-toque:active, .btn-toque.pressed {
+    transform:translateY(3px);
+    box-shadow:0 1px 0 #05070f;
+    background:#15803d;
+    color:#ffffff;
+    border-color:#86efac;
+  }
+
+  .btn-modo {
+    font-size:10px; font-weight:800; min-width:44px; height:28px; padding:2px 6px;
+    border-color:#55ff55; color:#55ff55;
+  }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+  <!-- TOPO -->
+  <header id="header-mobile">
+    <a id="voltar-link" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+
+    <div class="info-bar">
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Left" data-pt="Esquerda">Left</span>
+        <span id="txt-placar-esq" class="info-val" style="color:#55ff55;">0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Right" data-pt="Direita">Right</span>
+        <span id="txt-placar-dir" class="info-val" style="color:#38bdf8;">0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Rally" data-pt="Rali">Rally</span>
+        <span id="txt-rali" class="info-val" style="color:#facc15;">0</span>
+      </div>
+    </div>
+
+    <div class="acoes-topo">
+      <button class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:2px 5px;border-color:#55ff55;color:#55ff55;">⛶ FULL</button>
+      <button class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:2px 5px;min-width:44px;">🇺🇸 EN</button>
+      <button id="btn-modo" class="btn-topo btn-modo" type="button">2P</button>
+      <button id="btn-som" class="btn-topo" type="button">🔊</button>
+      <button id="btn-pausa" class="btn-topo" type="button">⏸</button>
+    </div>
+  </header>
+
+  <!-- ARENA DE JOGO -->
+  <main id="palco">
+    <canvas id="tela" width="480" height="640"></canvas>
+  </main>
+
+  <!-- CONTROLES DE TOQUE: um lado para cada jogador -->
+  <footer id="controles-deck">
+    <div class="grupo-direcional" id="grupo-esq">
+      <button id="btn-esq-cima" class="btn-toque" type="button" aria-label="Left paddle up">▲</button>
+      <button id="btn-esq-baixo" class="btn-toque" type="button" aria-label="Left paddle down">▼</button>
+    </div>
+    <div class="grupo-direcional" id="grupo-dir">
+      <button id="btn-dir-cima" class="btn-toque" type="button" aria-label="Right paddle up" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);">▲</button>
+      <button id="btn-dir-baixo" class="btn-toque" type="button" aria-label="Right paddle down" style="color:#38bdf8;border-color:rgba(56,189,248,0.35);">▼</button>
+    </div>
+  </footer>
+</div>
+
+<script src="roteador.js?v=2.2"></script>
+<script src="dois-tracos.js?v=2.2"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  if (typeof window.criarDoisTracos !== 'function') {
+    alert('Erro: arquivo dois-tracos.js não encontrado.');
+    return;
+  }
+
+  var txtPlacarEsq = document.getElementById('txt-placar-esq');
+  var txtPlacarDir = document.getElementById('txt-placar-dir');
+  var txtRali = document.getElementById('txt-rali');
+  var btnModo = document.getElementById('btn-modo');
+  var btnSom = document.getElementById('btn-som');
+  var btnPausa = document.getElementById('btn-pausa');
+  var grupoDir = document.getElementById('grupo-dir');
+
+  var jogo = window.criarDoisTracos(canvas, {
+    aoAtualizar: function (d) {
+      if (txtPlacarEsq) txtPlacarEsq.textContent = d.placar[0];
+      if (txtPlacarDir) txtPlacarDir.textContent = d.placar[1];
+      if (txtRali) txtRali.textContent = d.rali;
+      if (btnModo) btnModo.textContent = d.modo === 'cpu' ? '1P' : '2P';
+      if (grupoDir) grupoDir.classList.toggle('desativado', d.modo === 'cpu');
+      if (btnPausa) btnPausa.textContent = d.pausado ? '▶' : '⏸';
+      if (btnSom) btnSom.textContent = d.som ? '🔊' : '🔇';
+    }
+  });
+
+  jogo.iniciar();
+
+  var palco = document.getElementById('palco');
+  function ajustar() {
+    var rect = palco.getBoundingClientRect();
+    var dispL = Math.max(100, Math.min(rect.width || 9999, window.innerWidth || 9999) - 16);
+    var dispA = Math.max(100, (rect.height || (window.innerHeight - 130)) - 12);
+    var s = Math.min(dispL / 480, dispA / 640);
+    if (!(s > 0)) s = 0.5;
+    canvas.style.width = Math.floor(480 * s) + 'px';
+    canvas.style.height = Math.floor(640 * s) + 'px';
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+  ajustar();
+
+  /* ------------------- TOQUE NOS BOTÕES COM POINTER EVENTS ------------------- */
+  function ligarBotao(id, aoPressionar, aoSoltar) {
+    var el = document.getElementById(id);
+    if (!el) return;
+
+    var pressionado = false;
+    function iniciar(e) {
+      if (e) e.preventDefault();
+      pressionado = true;
+      el.classList.add('pressed');
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      aoPressionar();
+    }
+    function parar(e) {
+      if (e) e.preventDefault();
+      if (pressionado) {
+        pressionado = false;
+        el.classList.remove('pressed');
+        aoSoltar();
+      }
+    }
+
+    el.addEventListener('pointerdown', iniciar, { passive: false });
+    el.addEventListener('pointerup', parar, { passive: false });
+    el.addEventListener('pointercancel', parar, { passive: false });
+    el.addEventListener('lostpointercapture', parar, { passive: false });
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  ligarBotao('btn-esq-cima',
+    function () { jogo.entrada.cima('esq', true); },
+    function () { jogo.entrada.cima('esq', false); }
+  );
+  ligarBotao('btn-esq-baixo',
+    function () { jogo.entrada.baixo('esq', true); },
+    function () { jogo.entrada.baixo('esq', false); }
+  );
+  ligarBotao('btn-dir-cima',
+    function () { jogo.entrada.cima('dir', true); },
+    function () { jogo.entrada.cima('dir', false); }
+  );
+  ligarBotao('btn-dir-baixo',
+    function () { jogo.entrada.baixo('dir', true); },
+    function () { jogo.entrada.baixo('dir', false); }
+  );
+
+  btnPausa.addEventListener('click', function () {
+    jogo.acao('pausa');
+  });
+
+  btnSom.addEventListener('click', function () {
+    jogo.acao('som');
+  });
+
+  btnModo.addEventListener('click', function () {
+    jogo.acao(btnModo.textContent === '2P' ? 'cpu' : 'duplo');
+  });
+
+  // A arena ocupa toda a área do palco: o jogo se adapta à proporção dela
+  function dimensoesDaArea(largura, altura) {
+    var proporcao = largura / altura;
+    if (proporcao >= 480 / 640) return { w: Math.round(640 * proporcao), h: 640 };
+    return { w: 480, h: Math.round(480 / proporcao) };
+  }
+
+  var palco = document.getElementById('palco');
+  function ajustar() {
+    var rect = palco.getBoundingClientRect();
+    var d = dimensoesDaArea(Math.max(1, rect.width), Math.max(1, rect.height));
+    canvas.width = d.w;
+    canvas.height = d.h;
+    canvas.style.width = Math.floor(rect.width) + 'px';
+    canvas.style.height = Math.floor(rect.height) + 'px';
+    jogo.redimensionar(d.w, d.h);
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+  ajustar();
+
+  /* Toque na arena começa a partida ou volta do pause */
+  canvas.addEventListener('pointerdown', function () {
+    jogo.entrada.disparar(true);
+  });
+})();
+</script>
+</body>
+</html>

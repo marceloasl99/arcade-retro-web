@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#05070f">
+<title>BRICK BREAKER — Celular</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#05070f; overflow:hidden;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;
+    overscroll-behavior:none;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0;
+  }
+
+  #app-mobile {
+    width:100%; max-width:430px;
+    height:100vh;
+    height:100dvh;
+    height:var(--app-height, 100dvh);
+    margin:0 auto; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: radial-gradient(circle at 50% 30%, #0c1222 0%, #05070f 100%);
+    overflow:hidden; position:fixed; top:0; bottom:0; left:50%; transform:translateX(-50%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+
+  /* ------------------- CABEÇALHO SUPERIOR ------------------- */
+  #header-mobile {
+    flex:0 0 auto; height:44px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 8px; width:100%;
+    background:rgba(8,12,22,0.94); border-bottom:1px solid rgba(251,146,60,0.2);
+    z-index:20;
+  }
+  #voltar-link {
+    color:#fb923c; text-decoration:none; font-size:10px; font-weight:800;
+    letter-spacing:0.06em; display:flex; align-items:center; gap:3px;
+    flex-shrink:0;
+  }
+  .info-bar { display:flex; gap:8px; font-size:10px; align-items:center; }
+  .info-item { display:flex; flex-direction:column; align-items:center; }
+  .info-rotulo { font-size:7px; color:#64748b; letter-spacing:0.05em; text-transform:uppercase; }
+  .info-val { font-weight:800; color:#f8fafc; font-size:11px; }
+
+  .acoes-topo { display:flex; gap:5px; flex-shrink:0; }
+  .btn-topo {
+    background:#1e293b; border:1px solid #475569; border-radius:6px;
+    color:#94a3b8; padding:4px 6px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; min-width:30px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-topo:active { background:#fb923c; color:#0f172a; }
+
+  /* ------------------- PALCO CENTRAL DO JOGO ------------------- */
+  #palco {
+    flex:1 1 auto; min-width:0; min-height:0; position:relative; overflow:hidden;
+  }
+  #tela {
+    position:absolute; left:0; top:0;
+    display:block;
+    box-shadow: 0 0 24px rgba(0,0,0,0.85), 0 0 0 1px rgba(251,146,60,0.25);
+    border-radius:6px;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* ------------------- PAINEL DE CONTROLES DE TOQUE ------------------- */
+  #controles-deck {
+    flex:0 0 auto; padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:rgba(8,12,22,0.96); border-top:1px solid rgba(251,146,60,0.2);
+    z-index:20;
+  }
+
+  .grupo-direcional {
+    display:flex; gap:8px; flex:1 1 50%;
+  }
+
+  .btn-toque {
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:12px; font-family:inherit; font-weight:800;
+    cursor:pointer; outline:none; transition:transform 0.05s, background-color 0.05s;
+    border:2px solid rgba(251,146,60,0.35);
+    background:linear-gradient(180deg, #1e293b, #0f172a);
+    color:#fb923c;
+    box-shadow:0 4px 0 #05070f, inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .btn-toque:active, .btn-toque.pressed {
+    transform:translateY(3px);
+    box-shadow:0 1px 0 #05070f;
+    background:#ea580c;
+    color:#ffffff;
+    border-color:#fdba74;
+  }
+
+  .btn-mov {
+    flex:1; height:clamp(48px, 8.5vh, 64px); font-size:clamp(20px, 4vh, 26px);
+  }
+
+  .btn-lancar {
+    flex:1 1 50%; height:clamp(48px, 8.5vh, 64px); font-size:clamp(12px, 2.2vh, 15px); letter-spacing:0.08em;
+    background:linear-gradient(180deg, #ea580c, #9a3412);
+    border-color:#fdba74; color:#fff7ed;
+    box-shadow:0 4px 0 #431407, inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .btn-lancar:active, .btn-lancar.pressed {
+    background:#fb923c; color:#ffffff;
+    box-shadow:0 1px 0 #431407;
+    border-color:#fed7aa;
+  }
+</style>
+</head>
+<body>
+
+<div id="app-mobile">
+  <!-- TOPO -->
+  <header id="header-mobile">
+    <a id="voltar-link" href="index.html" data-en="&larr; GAMES" data-pt="&larr; JOGOS">&larr; GAMES</a>
+
+    <div class="info-bar">
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Score" data-pt="Pontos">Score</span>
+        <span id="txt-pontos" class="info-val">000000</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="High Score" data-pt="Recorde">High Score</span>
+        <span id="txt-recorde" class="info-val" style="color:#facc15;">000000</span>
+      </div>
+      <div class="info-item">
+        <span class="info-rotulo" data-en="Balls" data-pt="Bolinhas">Balls</span>
+        <span id="txt-vidas" class="info-val" style="color:#f4f6fc;">3</span>
+      </div>
+    </div>
+
+    <div class="acoes-topo">
+      <button class="btn-topo btn-fullscreen-toggle" onclick="alternarTelaCheia()" type="button" aria-label="Fullscreen" data-en="⛶ FULL" data-pt="⛶ CHEIA" style="font-size:9px;padding:2px 5px;border-color:#fb923c;color:#fb923c;">⛶ FULL</button>
+      <button class="btn-topo btn-lang-toggle" onclick="alternarIdioma()" type="button" title="Language" style="font-size:9px;padding:2px 5px;min-width:44px;">🇺🇸 EN</button>
+      <button id="btn-som" class="btn-topo" type="button">🔊</button>
+      <button id="btn-pausa" class="btn-topo" type="button">⏸</button>
+    </div>
+  </header>
+
+  <!-- ARENA DE JOGO -->
+  <main id="palco">
+    <canvas id="tela" width="480" height="640"></canvas>
+  </main>
+
+  <!-- CONTROLES DE TOQUE -->
+  <footer id="controles-deck">
+    <div class="grupo-direcional">
+      <button id="btn-esq" class="btn-toque btn-mov" type="button" aria-label="Left">◀</button>
+      <button id="btn-dir" class="btn-toque btn-mov" type="button" aria-label="Right">▶</button>
+    </div>
+    <button id="btn-lancar" class="btn-toque btn-lancar" type="button" aria-label="Launch">
+      <span data-en="LAUNCH ⚡" data-pt="SOLTAR ⚡">LAUNCH ⚡</span>
+    </button>
+  </footer>
+</div>
+
+<script src="roteador.js?v=2.2"></script>
+<script src="brick-breaker.js?v=2.2"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  if (typeof window.criarBrickBreaker !== 'function') {
+    alert('Erro: arquivo brick-breaker.js não encontrado.');
+    return;
+  }
+
+  var txtPontos = document.getElementById('txt-pontos');
+  var txtRecorde = document.getElementById('txt-recorde');
+  var txtVidas = document.getElementById('txt-vidas');
+  var btnSom = document.getElementById('btn-som');
+  var btnPausa = document.getElementById('btn-pausa');
+
+  var jogo = window.criarBrickBreaker(canvas, {
+    aoAtualizar: function (d) {
+      if (txtPontos) txtPontos.textContent = String(d.pontos || 0).padStart(6, '0');
+      if (txtRecorde) txtRecorde.textContent = String(d.recorde || 0).padStart(6, '0');
+      if (txtVidas) txtVidas.textContent = Math.max(0, d.vidas !== undefined ? d.vidas : 3);
+      if (btnPausa) btnPausa.textContent = d.pausado ? '▶' : '⏸';
+      if (btnSom) btnSom.textContent = d.som ? '🔊' : '🔇';
+    }
+  });
+
+  jogo.iniciar();
+
+  var palco = document.getElementById('palco');
+  // A arena ocupa toda a área do palco: o jogo se adapta à proporção dela
+  function dimensoesDaArea(largura, altura) {
+    var proporcao = largura / altura;
+    if (proporcao >= 480 / 640) return { w: Math.round(640 * proporcao), h: 640 };
+    return { w: 480, h: Math.round(480 / proporcao) };
+  }
+
+  function ajustar() {
+    var rect = palco.getBoundingClientRect();
+    var d = dimensoesDaArea(Math.max(1, rect.width), Math.max(1, rect.height));
+    canvas.width = d.w;
+    canvas.height = d.h;
+    canvas.style.width = Math.floor(rect.width) + 'px';
+    canvas.style.height = Math.floor(rect.height) + 'px';
+    jogo.redimensionar(d.w, d.h);
+  }
+  window.addEventListener('resize', ajustar);
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 200); });
+  ajustar();
+
+  /* ------------------- TOQUE NOS BOTÕES COM POINTER EVENTS ------------------- */
+  function ligarBotao(id, aoPressionar, aoSoltar) {
+    var el = document.getElementById(id);
+    if (!el) return;
+
+    var pressionado = false;
+    function iniciar(e) {
+      if (e) e.preventDefault();
+      pressionado = true;
+      el.classList.add('pressed');
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      aoPressionar();
+    }
+    function parar(e) {
+      if (e) e.preventDefault();
+      if (pressionado) {
+        pressionado = false;
+        el.classList.remove('pressed');
+        aoSoltar();
+      }
+    }
+
+    el.addEventListener('pointerdown', iniciar, { passive: false });
+    el.addEventListener('pointerup', parar, { passive: false });
+    el.addEventListener('pointercancel', parar, { passive: false });
+    el.addEventListener('lostpointercapture', parar, { passive: false });
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  ligarBotao('btn-esq',
+    function () { jogo.entrada.esquerda(true); },
+    function () { jogo.entrada.esquerda(false); }
+  );
+
+  ligarBotao('btn-dir',
+    function () { jogo.entrada.direita(true); },
+    function () { jogo.entrada.direita(false); }
+  );
+
+  ligarBotao('btn-lancar',
+    function () { jogo.entrada.disparar(true); },
+    function () { jogo.entrada.disparar(false); }
+  );
+
+  btnPausa.addEventListener('click', function () {
+    jogo.acao('pausa');
+  });
+
+  btnSom.addEventListener('click', function () {
+    jogo.acao('som');
+  });
+
+  /* Toque na arena: começa, solta a bolinha ou, se arrastar, move a raquete */
+  var tocandoCanvas = false;
+  var ultimoX = 0;
+  canvas.addEventListener('pointerdown', function (e) {
+    tocandoCanvas = true;
+    ultimoX = e.clientX;
+    jogo.entrada.disparar(true);
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!tocandoCanvas) return;
+    var rect = canvas.getBoundingClientRect();
+    var escala = 480 / rect.width;
+    var deltaX = (e.clientX - ultimoX) * escala;
+    ultimoX = e.clientX;
+    jogo.entrada.mover(deltaX);
+  });
+  window.addEventListener('pointerup', function () { tocandoCanvas = false; });
+  window.addEventListener('pointercancel', function () { tocandoCanvas = false; });
+})();
+</script>
+</body>
+</html>
