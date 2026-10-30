@@ -15,8 +15,11 @@ function ok(cond, msg) {
 
 const roteador = ler('roteador.js');
 const menuHtml = ler('index.html');
-const JOGOS_PC = ['minhoquinha-desktop.html', 'tetris-desktop.html', 'pinball-desktop.html', 'space-invaders-desktop.html', 'space-cadet-desktop.html', 'bomberman-desktop.html', 'defender-desktop.html', 'pacman-desktop.html', 'penalty-kick-desktop.html'];
-const JOGOS_CEL = ['minhoquinha-mobile.html', 'tetris-mobile.html', 'pinball-mobile.html', 'space-invaders-mobile.html', 'space-cadet-mobile.html', 'bomberman-mobile.html', 'defender-mobile.html', 'pacman-mobile.html', 'penalty-kick-mobile.html'];
+const JOGOS_PC = ['minhoquinha-desktop.html', 'tetris-desktop.html', 'pinball-desktop.html', 'space-invaders-desktop.html', 'space-cadet-desktop.html', 'bomberman-desktop.html', 'defender-desktop.html', 'pacman-desktop.html', 'penalty-kick-desktop.html', 'brick-breaker-desktop.html', 'the-wall-desktop.html', 'dois-tracos-desktop.html'];
+const JOGOS_CEL = ['minhoquinha-mobile.html', 'tetris-mobile.html', 'pinball-mobile.html', 'space-invaders-mobile.html', 'space-cadet-mobile.html', 'bomberman-mobile.html', 'defender-mobile.html', 'pacman-mobile.html', 'penalty-kick-mobile.html', 'brick-breaker-mobile.html', 'the-wall-mobile.html', 'dois-tracos-mobile.html'];
+// Aceita o parâmetro de versão do cache (ex.: roteador.js?v=2.2)
+const usaArquivo = (html, arq) => new RegExp('src="' + arq.replace(/\./g, '\\.') + '(\\?v=[^"]*)?"').test(html);
+const temRoteador = t => usaArquivo(t, 'roteador.js');
 
 /* ------------------------- ambiente para o roteador ---------------------- */
 function carregarRoteador(opts) {
@@ -84,7 +87,13 @@ const forcadoNoLugar = [
   ['pacman-desktop.html', UA.iphone, 5, true, '?desktop=1'],
   ['pacman-mobile.html', UA.win, 0, false, '?mobile=1'],
   ['penalty-kick-desktop.html', UA.iphone, 5, true, '?desktop=1'],
-  ['penalty-kick-mobile.html', UA.win, 0, false, '?mobile=1']
+  ['penalty-kick-mobile.html', UA.win, 0, false, '?mobile=1'],
+  ['brick-breaker-desktop.html', UA.iphone, 5, true, '?desktop=1'],
+  ['brick-breaker-mobile.html', UA.win, 0, false, '?mobile=1'],
+  ['the-wall-desktop.html', UA.iphone, 5, true, '?desktop=1'],
+  ['the-wall-mobile.html', UA.win, 0, false, '?mobile=1'],
+  ['dois-tracos-desktop.html', UA.iphone, 5, true, '?desktop=1'],
+  ['dois-tracos-mobile.html', UA.win, 0, false, '?mobile=1']
 ];
 forcadoNoLugar.forEach(function (c) {
   const sub = carregarRoteador({
@@ -126,23 +135,23 @@ ok(carregarRoteador({ pagina: '/tetris-desktop.html', ua: UA.iphone, toque: 5, g
    '?desktop=1 sobrevive ao redirecionamento (nao volta)');
 
 console.log('\n[4] todos os arquivos apontados pelo cardapio existem');
-const caminhos = [...menuHtml.matchAll(/'(minhoquinha|tetris|pinball|space-invaders|space-cadet|bomberman|defender|pacman|penalty-kick)[^']*\.html'/g)].map(m => m[0].slice(1, -1));
+const caminhos = [...menuHtml.matchAll(/'(minhoquinha|tetris|pinball|space-invaders|space-cadet|bomberman|defender|pacman|penalty-kick|brick-breaker|the-wall|dois-tracos)[^']*\.html'/g)].map(m => m[0].slice(1, -1));
 const unicos = [...new Set(caminhos)];
 unicos.forEach(f => ok(existe(f), 'existe: ' + f));
-ok(unicos.length >= 18, 'o cardapio lista os 18 arquivos de jogo (' + unicos.length + ')');
+ok(unicos.length >= 24, 'o cardapio lista os 24 arquivos de jogo (' + unicos.length + ')');
 JOGOS_PC.concat(JOGOS_CEL).forEach(f => ok(existe(f), 'arquivo do projeto presente: ' + f));
 
 console.log('\n[5] cada pagina de jogo usa o roteador compartilhado');
 JOGOS_PC.concat(JOGOS_CEL).forEach(function (f) {
   const t = ler(f);
-  ok(t.includes('<script src="roteador.js"></script>'), f + ' inclui roteador.js');
+  ok(temRoteador(t), f + ' inclui roteador.js');
   ok(t.includes('href="index.html"'), f + ' tem link de volta para o cardapio');
   ok(!t.includes('PORTA DE ENTRADA'), f + ' nao tem mais roteador embutido (sem duplicacao)');
 });
 
 console.log('\n[6] motores');
 ok(existe('tetris.js'), 'motor do Tetris em arquivo proprio (tetris.js)');
-ok(ler('tetris-desktop.html').includes('src="tetris.js"') && ler('tetris-mobile.html').includes('src="tetris.js"'),
+ok(usaArquivo(ler('tetris-desktop.html'), 'tetris.js') && usaArquivo(ler('tetris-mobile.html'), 'tetris.js'),
    'as duas versoes do Tetris usam o MESMO motor (nao ha copia para divergir)');
 ok(!/function\s+girarMatriz/.test(ler('tetris-desktop.html')) && !/function\s+girarMatriz/.test(ler('tetris-mobile.html')),
    'nenhuma das paginas do Tetris repete o motor dentro do HTML');
@@ -152,31 +161,41 @@ ok(ler('minhoquinha-mobile.html').includes('b-up') && ler('minhoquinha-mobile.ht
    'a versao de celular da minhoquinha mantem o D-pad de 4 setas');
 ok(!ler('minhoquinha-desktop.html').includes('b-up'), 'a versao de computador da minhoquinha nao tem D-pad');
 ok(existe('pinball.js'), 'motor do Pinball em arquivo proprio (pinball.js)');
-ok(ler('pinball-desktop.html').includes('src="pinball.js"') && ler('pinball-mobile.html').includes('src="pinball.js"'),
+ok(usaArquivo(ler('pinball-desktop.html'), 'pinball.js') && usaArquivo(ler('pinball-mobile.html'), 'pinball.js'),
    'as duas versoes do Pinball usam o MESMO motor (pinball.js)');
 ok(existe('space-invaders.js'), 'motor do Space Invaders em arquivo proprio (space-invaders.js)');
-ok(ler('space-invaders-desktop.html').includes('src="space-invaders.js"') && ler('space-invaders-mobile.html').includes('src="space-invaders.js"'),
+ok(usaArquivo(ler('space-invaders-desktop.html'), 'space-invaders.js') && usaArquivo(ler('space-invaders-mobile.html'), 'space-invaders.js'),
    'as duas versoes do Space Invaders usam o MESMO motor (space-invaders.js)');
 ok(existe('3DPinballSpaceCadet.js'), 'motor do Space Cadet em arquivo proprio (3DPinballSpaceCadet.js)');
 ok(ler('space-cadet-desktop.html').includes('3DPinballSpaceCadet.js') && ler('space-cadet-mobile.html').includes('3DPinballSpaceCadet.js'),
    'as duas versoes do Space Cadet usam o motor nativo WebAssembly');
 ok(existe('bomberman.js'), 'motor do Bomberman em arquivo proprio (bomberman.js)');
-ok(ler('bomberman-desktop.html').includes('src="bomberman.js"') && ler('bomberman-mobile.html').includes('src="bomberman.js"'),
+ok(usaArquivo(ler('bomberman-desktop.html'), 'bomberman.js') && usaArquivo(ler('bomberman-mobile.html'), 'bomberman.js'),
    'as duas versoes do Bomberman usam o MESMO motor (bomberman.js)');
 ok(existe('defender.js'), 'motor do Defender em arquivo proprio (defender.js)');
-ok(ler('defender-desktop.html').includes('src="defender.js"') && ler('defender-mobile.html').includes('src="defender.js"'),
+ok(usaArquivo(ler('defender-desktop.html'), 'defender.js') && usaArquivo(ler('defender-mobile.html'), 'defender.js'),
    'as duas versoes do Defender usam o MESMO motor (defender.js)');
 ok(existe('pacman.js'), 'motor do Pacman em arquivo proprio (pacman.js)');
-ok(ler('pacman-desktop.html').includes('src="pacman.js"') && ler('pacman-mobile.html').includes('src="pacman.js"'),
+ok(usaArquivo(ler('pacman-desktop.html'), 'pacman.js') && usaArquivo(ler('pacman-mobile.html'), 'pacman.js'),
    'as duas versoes do Pacman usam o MESMO motor (pacman.js)');
 ok(existe('penalty-kick.js'), 'motor do Penalty Kick em arquivo proprio (penalty-kick.js)');
-ok(ler('penalty-kick-desktop.html').includes('src="penalty-kick.js"') && ler('penalty-kick-mobile.html').includes('src="penalty-kick.js"'),
+ok(usaArquivo(ler('penalty-kick-desktop.html'), 'penalty-kick.js') && usaArquivo(ler('penalty-kick-mobile.html'), 'penalty-kick.js'),
    'as duas versoes do Penalty Kick usam o MESMO motor (penalty-kick.js)');
+
+ok(existe('brick-breaker.js'), 'motor do Quebra-Tijolos em arquivo proprio (brick-breaker.js)');
+ok(usaArquivo(ler('brick-breaker-desktop.html'), 'brick-breaker.js') && usaArquivo(ler('brick-breaker-mobile.html'), 'brick-breaker.js'),
+   'as duas versoes do Quebra-Tijolos usam o MESMO motor (brick-breaker.js)');
+ok(existe('the-wall.js'), 'motor do The Wall em arquivo proprio (the-wall.js)');
+ok(usaArquivo(ler('the-wall-desktop.html'), 'the-wall.js') && usaArquivo(ler('the-wall-mobile.html'), 'the-wall.js'),
+   'as duas versoes do The Wall usam o MESMO motor (the-wall.js)');
+ok(existe('dois-tracos.js'), 'motor do Dois Traços em arquivo proprio (dois-tracos.js)');
+ok(usaArquivo(ler('dois-tracos-desktop.html'), 'dois-tracos.js') && usaArquivo(ler('dois-tracos-mobile.html'), 'dois-tracos.js'),
+   'as duas versoes do Dois Traços usam o MESMO motor (dois-tracos.js)');
 
 console.log('\n[7] cardapio: lista de jogos editavel');
 ok(/var JOGOS = \[/.test(menuHtml), 'o cardapio tem a lista JOGOS para acrescentar jogos');
 const nomes = [...menuHtml.matchAll(/nome: '([^']+)'/g)].map(m => m[1]);
-ok(nomes.length === 9 && nomes[0] === 'MINHOQUINHA' && nomes[1] === 'TETRIS' && nomes[2] === 'PINBALL 3D' && nomes[3] === 'SPACE INVADERS' && nomes[4] === 'SPACE CADET' && nomes[5] === 'BOMBERMAN' && nomes[6] === 'DEFENDER' && nomes[7] === 'PACMAN' && nomes[8] === 'PENALTY KICK',
+ok(nomes.length === 12 && nomes[0] === 'MINHOQUINHA' && nomes[1] === 'TETRIS' && nomes[2] === 'PINBALL 3D' && nomes[3] === 'SPACE INVADERS' && nomes[4] === 'SPACE CADET' && nomes[5] === 'BOMBERMAN' && nomes[6] === 'DEFENDER' && nomes[7] === 'PACMAN' && nomes[8] === 'PENALTY KICK' && nomes[9] === 'BRICK BREAKER' && nomes[10] === 'THE WALL' && nomes[11] === 'DOIS TRACOS',
    'lista com os nove jogos na ordem: ' + nomes.join(', '));
 ok(/pintarIcone/.test(menuHtml), 'cada jogo tem icone desenhado em canvas');
 ok(/roteador\.js/.test(menuHtml), 'o cardapio tambem usa o roteador para saber o aparelho');

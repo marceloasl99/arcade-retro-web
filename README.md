@@ -1,12 +1,12 @@
 # 🕹️ Retro Arcade Web Collection v2.2
 
 [![Version](https://img.shields.io/badge/version-2.2.0-brightgreen.svg)](https://github.com/marceloasl99/arcade-retro-web)
-[![Games](https://img.shields.io/badge/games-9%20classic%20titles-orange.svg)](https://github.com/marceloasl99/arcade-retro-web)
+[![Games](https://img.shields.io/badge/games-12%20classic%20titles-orange.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Tech](https://img.shields.io/badge/tech-HTML5%20%7C%20Canvas%20%7C%20WebAudio%20%7C%20Wasm-blue.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![Platform](https://img.shields.io/badge/platform-Desktop%20%26%20Mobile-purple.svg)](https://github.com/marceloasl99/arcade-retro-web)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-An authentic, zero-dependency browser collection of **9 classic retro arcade games** with authentic CRT cabinet aesthetics, custom physics engines, procedural Web Audio API sound synthesis, dual responsive layouts (Desktop CRT Cabinet with sidebar telemetry & Fullscreen Touch Mobile), automatic platform routing, and full bilingual support (English by default with instant Portuguese toggle).
+An authentic, zero-dependency browser collection of **12 classic retro arcade games** with authentic CRT cabinet aesthetics, custom physics engines, procedural Web Audio API sound synthesis, dual responsive layouts (Desktop CRT Cabinet with sidebar telemetry & Fullscreen Touch Mobile), automatic platform routing, and full bilingual support (English by default with instant Portuguese toggle).
 
 Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920×1080) with zero vertical scroll**.
 
@@ -211,6 +211,32 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 
 ---
 
+### 10. Brick Breaker (Quebra-Tijolos, Arcade 1976)
+* **Classic Breakout Wall**: 8×6 brick wall, with the top rows worth the most (70 to 20 pts).
+* **4 Wall Designs**: full wall, checkerboard, diamond and fortress, repeating after the last one.
+* **Angle Control**: hitting the edge of the paddle sends the ball off sharply; speed rises as bricks fall.
+* **Desktop**: arrows / A-D or mouse · **Mobile**: ◀ ▶ buttons, LAUNCH button, drag on the arena.
+
+---
+
+### 11. The Wall (Game Show Pin Board)
+* **Drop Board**: pick where to drop the ball, then watch it bounce through a grid of pins.
+* **9 Prize Slots**: edges pay 1000, the center pays 50; the dividers stop the ball from rolling between slots.
+* **10 Balls per Game** and a high score saved in the browser.
+* **Desktop**: arrows / A-D or mouse · **Mobile**: ◀ ▶ buttons, DROP button, drag to aim.
+
+---
+
+### 12. Two Paddles (Dois Traços, Arcade 1972)
+* **Pong-style Duel**: one paddle on the left, one on the right, and a ball that keeps bouncing between them.
+* **2 Players or vs CPU**: both players share one keyboard (W/S and ↑/↓); press 1 for the CPU or 2 for two players.
+* **First to 7 Wins**, with the longest rally saved in the browser.
+* **Desktop**: W/S and ↑/↓ · **Mobile**: 4 touch arrows (two per side) and a 1P/2P toggle.
+
+> Screenshots for these three games have not been made yet (no `tela-*.png` files for them).
+
+---
+
 ## 🕹️ Controls Quick Reference
 
 | Game | Desktop (Keyboard / Mouse) | Mobile (Touch / On-Screen) |
@@ -224,6 +250,9 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 | **Defender** | Arrows / WASD (Thrust/Pitch), Space (Fire), B (Smart Bomb), H (Hyperspace) | Virtual flight stick, fire & bomb triggers |
 | **Pac-Man** | Arrow Keys / WASD | Swipe gestures & virtual directional buttons |
 | **Penalty Kick** | Click & Drag / Click to Shoot · Move Mouse (Gloves) | Swipe ball / Tap goal · Touch & drag gloves |
+| **Brick Breaker** | Left/Right or A/D / Mouse move · SPACE/ENTER launch · P/ESC pause | ◀ ▶ buttons · LAUNCH button · drag arena |
+| **The Wall** | Left/Right or A/D choose drop point · SPACE/ENTER drop · P/ESC pause | ◀ ▶ buttons · DROP button · drag to aim |
+| **Two Paddles** | W/S left paddle · ↑/↓ right paddle · 1 vs CPU · 2 two players | 4 touch arrows · 1P/2P toggle |
 
 ---
 
@@ -294,6 +323,9 @@ node _selftest_space_invaders.js   # Validates alien fleet marching and bunker d
 node _selftest_bomberman.js        # Validates Bomberman grid, bomb propagation and drops
 node _selftest_defender.js         # Validates Defender radar scanner and human rescue
 node _selftest_pacman.js           # Validates Pac-Man maze grid and ghost pathfinding AI
+node _selftest_brick_breaker.js    # Validates Brick Breaker wall, paddle bounce and phase progression
+node _selftest_the_wall.js         # Validates The Wall pin physics, prize slots and game over
+node _selftest_dois_tracos.js      # Validates Two Paddles serve, scoring, CPU paddle and victory
 ```
 
 ---

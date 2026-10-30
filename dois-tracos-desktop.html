@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<title>DOIS TRAÇOS — Computador</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; background:#05070f; overflow:hidden;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color:#e2e8f0; -webkit-user-select:none; user-select:none;
+  }
+
+  /* ------------------- ESTRUTURA GERAL ARCADE ------------------- */
+  #arcade-layout {
+    display:flex; width:100vw; height:100vh; overflow:hidden;
+    background: radial-gradient(circle at 50% 50%, #0c1222 0%, #05070f 100%);
+  }
+
+  /* Painéis laterais retro */
+  .painel-lateral {
+    width:320px; flex-shrink:0; height:100%; display:flex; flex-direction:column;
+    gap:14px; padding:18px 16px; background:rgba(8,12,22,0.85);
+    border-right:1px solid rgba(85,255,85,0.18);
+    backdrop-filter:blur(8px); z-index:10; overflow-y:auto;
+  }
+  #painel-dir {
+    border-right:none; border-left:1px solid rgba(85,255,85,0.18);
+  }
+
+  #voltar-link {
+    color:#55ff55; text-decoration:none; font-size:11px; font-weight:800;
+    letter-spacing:0.12em; display:inline-flex; align-items:center; gap:6px;
+    transition:transform 0.15s, color 0.15s;
+  }
+  #voltar-link:hover { color:#bbf7d0; transform:translateX(-3px); }
+
+  @media (max-width: 1080px) {
+    .painel-lateral { display:none; }
+  }
+
+  /* Container central da arena */
+  #arena-container {
+    flex:1; height:100%; position:relative; display:flex;
+    align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(0,0,0,0.85);
+  }
+
+  #tela {
+    display:block; width:100%; height:100%; object-fit:contain;
+    cursor:pointer;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* ------------------- CARDS E WIDGETS LATERAIS ------------------- */
+  .card-arcade {
+    background:linear-gradient(180deg, rgba(16,25,44,0.7) 0%, rgba(10,16,28,0.85) 100%);
+    border:1px solid rgba(85,255,85,0.22); border-radius:12px;
+    padding:12px 14px; box-shadow:0 4px 18px rgba(0,0,0,0.5);
+  }
+
+  .card-titulo {
+    font-size:10px; font-weight:800; letter-spacing:0.16em; color:#94a3b8;
+    text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+
+  .texto-info { font-size:11px; line-height:1.5; color:#94a3b8; }
+
+  /* Telemetria */
+  .telemetria-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;
+  }
+  .tele-item {
+    background:rgba(255,255,255,0.03); padding:6px 8px; border-radius:6px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .tele-rotulo { font-size:9px; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; }
+  .tele-val { font-size:14px; font-weight:800; color:#55ff55; margin-top:2px; }
+
+  /* Botões utilitários */
+  .botoes-coluna { display:flex; flex-direction:column; gap:8px; }
+  .btn-acao {
+    width:100%; padding:10px; border-radius:8px; border:1px solid rgba(85,255,85,0.4);
+    background:linear-gradient(180deg, #1e293b, #0f172a); color:#f8fafc;
+    font-family:inherit; font-size:11px; font-weight:800; letter-spacing:0.12em;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background 0.15s, border-color 0.15s, transform 0.05s;
+  }
+  .btn-acao:hover { border-color:#55ff55; transform:translateY(-1px); }
+  .btn-acao:active { transform:translateY(1px); }
+  .btn-principal {
+    background:linear-gradient(180deg, #15803d, #166534); border-color:#55ff55;
+    box-shadow:0 0 16px rgba(85,255,85,0.3);
+  }
+  .btn-acao.ativo {
+    background:linear-gradient(180deg, #0284c7, #0369a1); border-color:#38bdf8;
+    box-shadow:0 0 12px rgba(56,189,248,0.35);
+  }
+
+  /* Guia de Teclas */
+  .tecla-linha {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:4px 0; font-size:11px; border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .tecla-linha:last-child { border-bottom:none; }
+  .kbd-chip {
+    background:#1e293b; border:1px solid #475569; border-radius:4px;
+    padding:2px 6px; font-size:10px; font-weight:700; color:#55ff55;
+    box-shadow:0 1px 0 rgba(255,255,255,0.2);
+  }
+</style>
+</head>
+<body>
+
+<div id="arcade-layout">
+  <!-- PAINEL LATERAL ESQUERDO -->
+  <aside class="painel-lateral">
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <a id="voltar-link" href="index.html" data-en="&larr; BACK TO GAMES" data-pt="&larr; VOLTAR AOS JOGOS">&larr; BACK TO GAMES</a>
+      <button class="btn-lang-toggle" onclick="alternarIdioma()" type="button" style="padding:5px 8px;background:rgba(85,255,85,0.12);border:1px solid rgba(85,255,85,0.35);color:#55ff55;border-radius:6px;font-family:inherit;font-size:10px;font-weight:800;cursor:pointer;">🇺🇸 EN &middot; PT</button>
+    </div>
+
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span>DOIS TRAÇOS</span>
+        <span style="color:#55ff55;">ARCADE 1972</span>
+      </div>
+      <p class="texto-info" data-en="Two paddles, one on the left and one on the right, and a ball that keeps bouncing between them. Defend your side: whoever lets the ball slip past loses the point. First to 7 wins." data-pt="Dois traços, um na esquerda e outro na direita, e uma bolinha que não para de quicar entre eles. Defenda o seu lado: quem deixar a bolinha passar perde o ponto. Quem chegar a 7 vence.">
+        Two paddles, one on the left and one on the right, and a ball that keeps bouncing between them. Defend your side: whoever lets the ball slip past loses the point. First to 7 wins.
+      </p>
+    </div>
+
+    <!-- Modo de jogo -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="GAME MODE" data-pt="MODO DE JOGO">GAME MODE</span>
+      </div>
+      <div class="botoes-coluna">
+        <button id="btn-modo-duplo" class="btn-acao" type="button" data-en="👥 2 PLAYERS (KEY 2)" data-pt="👥 2 JOGADORES (TECLA 2)">👥 2 PLAYERS (KEY 2)</button>
+        <button id="btn-modo-cpu" class="btn-acao" type="button" data-en="🤖 VS CPU (KEY 1)" data-pt="🤖 CONTRA A CPU (TECLA 1)">🤖 VS CPU (KEY 1)</button>
+      </div>
+    </div>
+
+    <!-- Telemetria em tempo real -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="TELEMETRY" data-pt="TELEMETRIA">TELEMETRY</span>
+      </div>
+      <div class="telemetria-grid">
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Score" data-pt="Placar">Score</div>
+          <div id="tele-placar" class="tele-val">0 x 0</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Rally" data-pt="Rali">Rally</div>
+          <div id="tele-rali" class="tele-val">0</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Mode" data-pt="Modo">Mode</div>
+          <div id="tele-modo" class="tele-val" style="font-size:11px;">2 PLAYERS</div>
+        </div>
+        <div class="tele-item">
+          <div class="tele-rotulo" data-en="Status" data-pt="Status">Status</div>
+          <div id="tele-status" class="tele-val" style="font-size:11px;">READY</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ARENA CENTRAL DO JOGO -->
+  <main id="arena-container">
+    <canvas id="tela" width="480" height="640"></canvas>
+  </main>
+
+  <!-- PAINEL LATERAL DIREITO -->
+  <aside id="painel-dir" class="painel-lateral">
+    <!-- Maior rali -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="LONGEST RALLY" data-pt="MAIOR RALI">LONGEST RALLY</span>
+        <span style="color:#facc15;" data-en="LOCAL" data-pt="LOCAL">LOCAL</span>
+      </div>
+      <div class="tele-item">
+        <div class="tele-rotulo" data-en="Best rally in this browser" data-pt="Melhor rali neste navegador">Best rally in this browser</div>
+        <div id="rank-top" class="tele-val" style="color:#facc15;">0</div>
+      </div>
+    </div>
+
+    <!-- Comandos e Ações -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="CONTROLS" data-pt="CONTROLES">CONTROLS</span>
+      </div>
+      <div class="botoes-coluna">
+        <button id="btn-jogar" class="btn-acao btn-principal" type="button" data-en="🚀 START / RESTART" data-pt="🚀 INICIAR / REINICIAR">
+          🚀 START / RESTART
+        </button>
+        <button id="btn-pausa" class="btn-acao" type="button" data-en="⏸ PAUSE (P)" data-pt="⏸ PAUSAR (P)">
+          ⏸ PAUSE (P)
+        </button>
+        <button id="btn-som" class="btn-acao" type="button" data-en="🔊 SOUND: ON (M)" data-pt="🔊 SOM: ATIVADO (M)">
+          🔊 SOUND: ON (M)
+        </button>
+      </div>
+    </div>
+
+    <!-- Guia de Teclas -->
+    <div class="card-arcade">
+      <div class="card-titulo">
+        <span data-en="KEYBOARD" data-pt="TECLADO">KEYBOARD</span>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Left paddle" data-pt="Traço esquerdo">Left paddle</span>
+        <div><span class="kbd-chip">W</span> <span data-en="up" data-pt="sobe">up</span> · <span class="kbd-chip">S</span> <span data-en="down" data-pt="desce">down</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Right paddle" data-pt="Traço direito">Right paddle</span>
+        <div><span class="kbd-chip">&uarr;</span> <span data-en="up" data-pt="sobe">up</span> · <span class="kbd-chip">&darr;</span> <span data-en="down" data-pt="desce">down</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Game mode" data-pt="Modo de jogo">Game mode</span>
+        <div><span class="kbd-chip">1</span> <span data-en="vs CPU" data-pt="contra a CPU">vs CPU</span> · <span class="kbd-chip">2</span> <span data-en="2 players" data-pt="2 jogadores">2 players</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Start / serve" data-pt="Começar / iniciar">Start / serve</span>
+        <div><span class="kbd-chip">ENTER</span> <span data-en="or" data-pt="ou">or</span> <span class="kbd-chip">SPACE</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Pause" data-pt="Pausar">Pause</span>
+        <div><span class="kbd-chip">P</span> <span data-en="or" data-pt="ou">or</span> <span class="kbd-chip">ESC</span></div>
+      </div>
+      <div class="tecla-linha">
+        <span data-en="Toggle audio" data-pt="Ligar / mudar som">Toggle audio</span>
+        <div><span class="kbd-chip">M</span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="roteador.js?v=2.2"></script>
+<script src="dois-tracos.js?v=2.2"></script>
+<script>
+"use strict";
+(function () {
+  if (window.__redirecionando) return;
+
+  var canvas = document.getElementById('tela');
+  if (typeof window.criarDoisTracos !== 'function') {
+    alert('Error: dois-tracos.js not found.');
+    return;
+  }
+
+  var telePlacar = document.getElementById('tele-placar');
+  var teleRali = document.getElementById('tele-rali');
+  var teleModo = document.getElementById('tele-modo');
+  var teleStatus = document.getElementById('tele-status');
+  var rankTop = document.getElementById('rank-top');
+  var btnPausa = document.getElementById('btn-pausa');
+  var btnSom = document.getElementById('btn-som');
+  var btnModoDuplo = document.getElementById('btn-modo-duplo');
+  var btnModoCpu = document.getElementById('btn-modo-cpu');
+
+  var jogo = window.criarDoisTracos(canvas, {
+    aoAtualizar: function (d) {
+      var isPt = (typeof window !== 'undefined' && window.obterIdioma && window.obterIdioma() === 'pt');
+      if (telePlacar) telePlacar.textContent = d.placar[0] + ' x ' + d.placar[1];
+      if (teleRali) teleRali.textContent = d.rali;
+      if (teleModo) teleModo.textContent = d.modo === 'cpu' ? (isPt ? '1 JOGADOR' : '1 PLAYER') : (isPt ? '2 JOGADORES' : '2 PLAYERS');
+      if (teleStatus) {
+        if (d.estado === 'playing') teleStatus.textContent = isPt ? 'JOGANDO' : 'PLAYING';
+        else if (d.estado === 'paused') teleStatus.textContent = isPt ? 'PAUSADO' : 'PAUSED';
+        else if (d.estado === 'gameover') teleStatus.textContent = isPt ? 'FIM DE JOGO' : 'GAME OVER';
+        else teleStatus.textContent = isPt ? 'PRONTO' : 'READY';
+      }
+      if (rankTop) rankTop.textContent = String(d.recordeRali || 0);
+      if (btnModoDuplo) btnModoDuplo.classList.toggle('ativo', d.modo === 'duplo');
+      if (btnModoCpu) btnModoCpu.classList.toggle('ativo', d.modo === 'cpu');
+      if (btnPausa) {
+        btnPausa.textContent = d.pausado ? (isPt ? '▶ CONTINUAR (P)' : '▶ RESUME (P)') : (isPt ? '⏸ PAUSAR (P)' : '⏸ PAUSE (P)');
+      }
+      if (btnSom) {
+        btnSom.textContent = d.som ? (isPt ? '🔊 SOM: ATIVADO (M)' : '🔊 SOUND: ON (M)') : (isPt ? '🔇 SOM: MUDO (M)' : '🔇 SOUND: MUTED (M)');
+      }
+    }
+  });
+
+  jogo.iniciar();
+
+  // A arena ocupa toda a área central: o canvas assume a proporção dela e o jogo se adapta
+  function dimensoesDaArea(largura, altura) {
+    var proporcao = largura / altura;
+    if (proporcao >= 480 / 640) return { w: Math.round(640 * proporcao), h: 640 };
+    return { w: 480, h: Math.round(480 / proporcao) };
+  }
+
+  function ajustar() {
+    var r = canvas.parentElement.getBoundingClientRect();
+    var d = dimensoesDaArea(Math.max(1, r.width), Math.max(1, r.height));
+    canvas.width = d.w;
+    canvas.height = d.h;
+    jogo.redimensionar(d.w, d.h);
+  }
+  window.addEventListener('resize', ajustar);
+  ajustar();
+
+  /* ------------------- TECLADO ------------------- */
+  window.addEventListener('keydown', function (e) {
+    var k = e.key.toLowerCase();
+    if (['arrowup', 'arrowdown', ' '].indexOf(k) >= 0) {
+      e.preventDefault();
+    }
+    if (k === 'w') jogo.entrada.cima('esq', true);
+    if (k === 's') jogo.entrada.baixo('esq', true);
+    if (k === 'arrowup') jogo.entrada.cima('dir', true);
+    if (k === 'arrowdown') jogo.entrada.baixo('dir', true);
+    if ((k === ' ' || k === 'enter') && !e.repeat) jogo.entrada.disparar(true);
+    if ((k === 'p' || k === 'escape') && !e.repeat) jogo.acao('pausa');
+    if (k === 'm' && !e.repeat) jogo.acao('som');
+    if (k === '1' && !e.repeat) jogo.acao('cpu');
+    if (k === '2' && !e.repeat) jogo.acao('duplo');
+  }, { passive: false });
+
+  window.addEventListener('keyup', function (e) {
+    var k = e.key.toLowerCase();
+    if (k === 'w') jogo.entrada.cima('esq', false);
+    if (k === 's') jogo.entrada.baixo('esq', false);
+    if (k === 'arrowup') jogo.entrada.cima('dir', false);
+    if (k === 'arrowdown') jogo.entrada.baixo('dir', false);
+  });
+
+  /* ------------------- CLIQUES NOS BOTÕES ------------------- */
+  canvas.addEventListener('mousedown', function () {
+    jogo.entrada.disparar(true);
+  });
+  document.getElementById('btn-jogar').addEventListener('click', function () {
+    jogo.acao('comecar');
+  });
+  document.getElementById('btn-pausa').addEventListener('click', function () {
+    jogo.acao('pausa');
+  });
+  document.getElementById('btn-som').addEventListener('click', function () {
+    jogo.acao('som');
+  });
+  btnModoDuplo.addEventListener('click', function () {
+    jogo.acao('duplo');
+  });
+  btnModoCpu.addEventListener('click', function () {
+    jogo.acao('cpu');
+  });
+
+  window.addEventListener('blur', function () {
+    jogo.entrada.cima('esq', false);
+    jogo.entrada.baixo('esq', false);
+    jogo.entrada.cima('dir', false);
+    jogo.entrada.baixo('dir', false);
+  });
+})();
+</script>
+</body>
+</html>
