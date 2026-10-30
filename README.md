@@ -217,6 +217,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 * **Angle Control**: hitting the edge of the paddle sends the ball off sharply; speed rises as bricks fall.
 * **Desktop**: arrows / A-D or mouse · **Mobile**: ◀ ▶ buttons, LAUNCH button, drag on the arena.
 
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![Brick Breaker Desktop](tela-brick-breaker-desktop.png) | ![Brick Breaker Mobile](tela-brick-breaker-mobile.png) |
+
 ---
 
 ### 11. The Wall (Game Show Pin Board)
@@ -224,6 +228,10 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 * **9 Prize Slots**: edges pay 1000, the center pays 50; the dividers stop the ball from rolling between slots.
 * **10 Balls per Game** and a high score saved in the browser.
 * **Desktop**: arrows / A-D or mouse · **Mobile**: ◀ ▶ buttons, DROP button, drag to aim.
+
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![The Wall Desktop](tela-the-wall-desktop.png) | ![The Wall Mobile](tela-the-wall-mobile.png) |
 
 ---
 
@@ -233,7 +241,9 @@ Designed to fit **all 9 games simultaneously on a standard Full HD monitor (1920
 * **First to 7 Wins**, with the longest rally saved in the browser.
 * **Desktop**: W/S and ↑/↓ · **Mobile**: 4 touch arrows (two per side) and a 1P/2P toggle.
 
-> Screenshots for these three games have not been made yet (no `tela-*.png` files for them).
+| Desktop Cabinet | Mobile Fullscreen |
+| :---: | :---: |
+| ![Two Paddles Desktop](tela-dois-tracos-desktop.png) | ![Two Paddles Mobile](tela-dois-tracos-mobile.png) |
 
 ---
 
